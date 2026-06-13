@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SKVK Portfolio Tracker v18.0</title>
+<title>SKVK Portfolio Tracker v18.1</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.34.0/dist/tabler-icons.min.css">
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -243,10 +243,10 @@ tr:hover .acts{opacity:1}
 
 /* ── TAB NAVIGATION ── */
 .page-tabs{display:flex;gap:4px;margin-bottom:16px;border-bottom:2px solid var(--border);padding-bottom:0}
-.page-tab{padding:10px 18px;font-size:13px;font-weight:600;color:var(--text2);cursor:pointer;border:none;background:none;border-bottom:3px solid transparent;margin-bottom:-2px;border-radius:6px 6px 0 0;display:flex;align-items:center;gap:6px;transition:all .15s}
+.page-tab{padding:11px 20px;font-size:15px;font-weight:700;color:var(--text2);cursor:pointer;border:none;background:none;border-bottom:3px solid transparent;margin-bottom:-2px;border-radius:6px 6px 0 0;display:flex;align-items:center;gap:7px;transition:all .15s}
 .page-tab:hover{background:var(--bg2);color:var(--text)}
 .page-tab.active{color:var(--blue);border-bottom-color:var(--blue);background:var(--bg)}
-.page-tab .tab-icon{font-size:15px}
+.page-tab .tab-icon{font-size:17px}
 
 /* ── LOCK BUTTON ── */
 .lock-btn{background:none;border:1px solid var(--border);border-radius:var(--r);padding:5px 10px;cursor:pointer;font-size:14px;color:var(--text2);transition:all .15s;display:flex;align-items:center;gap:5px}
@@ -410,7 +410,7 @@ tr:hover .acts{opacity:1}
     <div class="topbar-left">
       <span class="online-badge"><i class="ti ti-wifi" style="font-size:10px"></i> Live Shared</span>
     </div>
-    <h1><i class="ti ti-chart-bar" style="color:var(--blue)"></i>SKVK Portfolio Tracker <span class="version-badge">v18.0</span></h1>
+    <h1><i class="ti ti-chart-bar" style="color:var(--blue)"></i>SKVK Portfolio Tracker <span class="version-badge">v18.1</span></h1>
     <div class="topbar-right">
       <span class="hint" id="lastFetch"></span>
       <div id="fetchStatus"></div>
@@ -583,17 +583,19 @@ tr:hover .acts{opacity:1}
     <!-- Main Returns Table -->
     <div style="margin-bottom:20px">
       <div class="tbl-wrap">
-        <table style="min-width:900px">
+        <table style="min-width:1100px">
           <thead><tr>
             <th style="min-width:140px">Property</th>
-            <th style="min-width:80px">Type</th>
-            <th class="r" style="min-width:90px">Invested ₹</th>
-            <th class="r" style="min-width:80px">Area</th>
+            <th class="r" style="min-width:75px">Area</th>
+            <th style="min-width:100px">Size / Type</th>
+            <th style="min-width:90px">Bought Date</th>
+            <th class="r" style="min-width:90px">Bought Price</th>
             <th class="r" style="min-width:110px">CMP ₹/unit <span style="font-size:9px;opacity:.7">(editable)</span></th>
             <th style="min-width:95px">CMP Date <span style="font-size:9px;opacity:.7">(editable)</span></th>
             <th class="r" style="min-width:100px">Current Value ₹</th>
-            <th class="r" style="min-width:90px">RE CAGR %</th>
+            <th class="r" style="min-width:80px">RE CAGR %</th>
             <th style="min-width:80px">In Networth?</th>
+            <th class="r" style="min-width:80px">Avg Holding</th>
           </tr></thead>
           <tbody id="reMainTbody"></tbody>
         </table>
@@ -712,8 +714,7 @@ tr:hover .acts{opacity:1}
         <div class="nw-section-title" style="margin-top:24px"><i class="ti ti-trending-down" style="color:var(--red)"></i> Loans & Liabilities</div>
         <div id="nwLoanRows"></div>
         <div class="nw-add-row" style="margin-bottom:8px">
-          <input id="nwNewLoan" placeholder="New loan name (e.g. Car Loan)..." style="flex:1;padding:8px 12px;border:1px solid var(--border);border-radius:var(--r);font-size:13px;outline:none">
-          <button class="btn" onclick="addNWLoan()"><i class="ti ti-plus"></i> Add Loan</button>
+          <button class="btn primary" onclick="openLoanModal()" style="width:100%"><i class="ti ti-plus"></i> Add Loan with Details</button>
         </div>
         <div class="nw-total-row">
           <span style="font-weight:700;font-size:13px">Total Loans</span>
@@ -938,6 +939,49 @@ tr:hover .acts{opacity:1}
       <div class="modal-footer">
         <button class="btn" onclick="closeREModal()">Cancel</button>
         <button class="btn primary" onclick="saveRE()"><i class="ti ti-device-floppy"></i> Save Property</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ═══ LOAN DETAIL MODAL ═══ -->
+  <div class="modal-overlay" id="loanModalOverlay" style="display:none" onclick="if(event.target===this)closeLoanModal()">
+    <div class="modal" style="max-width:520px">
+      <div class="modal-header">
+        <span class="modal-title" id="loanModalTitle">Add Loan</span>
+        <button class="modal-close" onclick="closeLoanModal()"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="modal-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="mf full"><label>Loan Name *</label><input id="ln_name" placeholder="e.g. Gold Loan - SBI"></div>
+          <div class="mf"><label>Bank / Lender *</label><input id="ln_bank" placeholder="e.g. SBI, HDFC, IIFL"></div>
+          <div class="mf"><label>Loan Type</label>
+            <select id="ln_type">
+              <option value="Gold Loan">Gold Loan</option>
+              <option value="Home Loan">Home Loan</option>
+              <option value="Personal Loan">Personal Loan</option>
+              <option value="Vehicle Loan">Vehicle Loan</option>
+              <option value="Education Loan">Education Loan</option>
+              <option value="Business Loan">Business Loan</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="mf"><label>Interest Rate % p.a.</label><input id="ln_interest" type="number" step="0.01" placeholder="e.g. 9.5"></div>
+          <div class="mf"><label>Loan Amount ₹ (Sanctioned)</label><input id="ln_amount" type="number" placeholder="0"></div>
+          <div class="mf"><label>Outstanding Amount ₹ *</label><input id="ln_outstanding" type="number" placeholder="Current balance" oninput="updateLoanPreview()"></div>
+          <div class="mf"><label>Start Date</label><input id="ln_startdate" type="date"></div>
+          <div class="mf"><label>End Date / Maturity</label><input id="ln_enddate" type="date"></div>
+          <div class="mf"><label>EMI ₹ / month</label><input id="ln_emi" type="number" placeholder="0"></div>
+          <div class="mf full"><label>Notes</label><input id="ln_notes" placeholder="Any extra details..."></div>
+        </div>
+        <div style="margin-top:12px;padding:10px 14px;background:var(--red-lt);border-radius:var(--r);font-size:12px;color:var(--red);display:flex;justify-content:space-between">
+          <span>Outstanding (deducted from Networth):</span>
+          <strong id="loanOutstandingPreview">₹0</strong>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeLoanModal()">Cancel</button>
+        <button class="btn primary" onclick="saveLoanDetail()"><i class="ti ti-device-floppy"></i> Save Loan</button>
       </div>
     </div>
   </div>
@@ -1940,7 +1984,8 @@ function updateSummary(arr){
   document.getElementById('s_invested').innerHTML=inrLC(tb)+'<div style="font-size:11px;color:var(--text2);font-weight:400;margin-top:2px">'+inr(tb)+'</div>';
   document.getElementById('s_value').innerHTML=inrLC(tc)+'<div style="font-size:11px;color:var(--text2);font-weight:400;margin-top:2px">'+inr(tc)+'</div>';
   var pe=document.getElementById('s_pnl');
-  pe.innerHTML=(pnl>=0?'+':'')+inrLC(pnl)+'<div style="font-size:11px;font-weight:400;margin-top:2px">'+((pnl>=0?'+':'')+inr(pnl))+'</div>';
+  var pnlAbs=Math.abs(pnl);
+  pe.innerHTML=(pnl>=0?'+':'-')+inrLC(pnlAbs)+'<div style="font-size:11px;font-weight:400;margin-top:2px">'+(pnl>=0?'+':'-')+inr(pnlAbs)+'</div>';
   pe.className='val '+(pnl>=0?'pos':'neg');
   var pr=document.getElementById('s_pct');
   pr.textContent=(pnl>=0?'+':'')+pct.toFixed(1)+'%'; pr.className='val '+(pnl>=0?'pos':'neg');
@@ -2452,9 +2497,7 @@ function drawPie(canvasId, data){
     ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.stroke();
     start+=slice;
   });
-  // Center hole
-  ctx.beginPath(); ctx.arc(cx,cy,r*0.45,0,2*Math.PI);
-  ctx.fillStyle='var(--bg)'; ctx.fill();
+  // No donut hole — solid pie
 }
 
 function buildLegend(containerId, data, total){
@@ -2496,10 +2539,12 @@ function renderAllocation(){
   cardsEl.innerHTML=keys.map((k,i)=>{
     var g=groups[k]; var pct=g.invested>0?(g.pnl/g.invested*100):0;
     var allocPct=total>0?(g.cv/total*100):0;
+    var pnlAbs=Math.abs(g.pnl);
     return `<div class="alloc-card ${allocFilter===k?'active':''}" onclick="setAllocFilter('${k}')" style="border-left:4px solid ${PIE_COLORS[i%PIE_COLORS.length]}">
       <div class="ac-name">${k} (${g.count})</div>
-      <div class="ac-val">${inr(g.cv)}</div>
-      <div class="ac-pnl ${pct>=0?'gain-txt':'loss-txt'}">${pct>=0?'+':''}${pct.toFixed(1)}% P&L</div>
+      <div class="ac-val">${inrLC(g.cv)}</div>
+      <div style="font-size:10px;color:var(--text2);margin-bottom:4px">${inr(g.cv)}</div>
+      <div class="ac-pnl ${g.pnl>=0?'gain-txt':'loss-txt'}">${g.pnl>=0?'+':'-'}${inrLC(pnlAbs)} (${pct>=0?'+':''}${pct.toFixed(1)}%)</div>
       <div class="ac-pct">${allocPct.toFixed(1)}% of portfolio</div>
     </div>`;
   }).join('');
@@ -2664,8 +2709,10 @@ function reCAGR(invested, currVal, purchaseDate){
 
 function renderRealEstate(){
   var props=Object.entries(reProps).map(function(e){ return Object.assign({},e[1],{_id:e[0]}); });
-  var totalInvested=props.reduce(function(s,p){ return s+(p.totalCost||0); },0);
-  var totalCurrVal=props.reduce(function(s,p){
+  // Only count "In Networth = Yes" properties in summary
+  var nwProps=props.filter(function(p){ return p.inNetworth!=='No'; });
+  var totalInvested=nwProps.reduce(function(s,p){ return s+(p.totalCost||0); },0);
+  var totalCurrVal=nwProps.reduce(function(s,p){
     var cv=p.cmp&&p.area?p.cmp*p.area:(p.totalCost||0); return s+cv;
   },0);
   var totalPnl=totalCurrVal-totalInvested;
@@ -2688,11 +2735,15 @@ function renderRealEstate(){
       var cagrTxt=cagr!==null?'<span class="'+(cagr>=0?'gain-txt':'loss-txt')+'" style="font-weight:700">'+(cagr>=0?'+':'')+cagr.toFixed(2)+'%</span>':'—';
       var inNW=p.inNetworth!=='No';
       var pid=p._id;
-      return '<tr>'+
-        '<td style="font-weight:600">'+p.name+'<div style="font-size:10px;color:var(--text2)">'+(p.date||'')+'</div></td>'+
-        '<td><span class="asset-badge">'+(p.type||'—')+'</span></td>'+
-        '<td class="r">'+inrLC(invested)+'<div style="font-size:10px;color:var(--text2)">'+inr(invested)+'</div></td>'+
+      var yrs=p.date?((Date.now()-new Date(p.date))/(365.25*86400000)):0;
+      var yrsStr=yrs>0?yrs.toFixed(1)+' yrs':'—';
+      var rowStyle=inNW?'':'opacity:0.6;background:var(--bg2)';
+      return '<tr style="'+rowStyle+'">'+
+        '<td style="font-weight:600">'+p.name+'</td>'+
         '<td class="r">'+(p.area||'—')+' '+(p.unit||'')+'</td>'+
+        '<td><span class="asset-badge">'+(p.type||'—')+'</span></td>'+
+        '<td style="font-size:12px">'+(p.date||'—')+'</td>'+
+        '<td class="r">'+inrLC(invested)+'<div style="font-size:10px;color:var(--text2)">'+inr(invested)+'</div></td>'+
         '<td class="r"><input type="number" step="0.01" value="'+(p.cmp||'')+'" placeholder="Enter CMP" '+
           'id="cmp_'+pid+'" data-pid="'+pid+'" '+
           'style="width:90px;padding:4px 6px;border:1px solid var(--border);border-radius:4px;font-size:12px;text-align:right" '+
@@ -2703,6 +2754,7 @@ function renderRealEstate(){
         '<td class="r '+(currVal>invested?'gain-txt':'loss-txt')+'">'+inrLC(currVal)+'<div style="font-size:10px;font-weight:400">'+inr(currVal)+'</div></td>'+
         '<td class="r">'+cagrTxt+'</td>'+
         '<td><span class="badge '+(inNW?'bg':'br')+'">'+(inNW?'Yes':'No')+'</span></td>'+
+        '<td class="r" style="font-size:12px;font-weight:600">'+yrsStr+'</td>'+
         '</tr>';
     }).join('');
   }
@@ -2903,7 +2955,8 @@ function subscribeToNetworth(){
     nwData={
       manualAssets: d.manualAssets||{},
       loans: d.loans||{},
-      extraLoans: d.extraLoans||{}
+      extraLoans: d.extraLoans||{},
+      loanDetails: d.loanDetails||{}
     };
     if(currentPageTab==='networth') renderNetworth();
   });
@@ -2944,7 +2997,9 @@ var NW_LOANS_DEF = [
 
 function getAutoAssetVal(def){
   if(def.autoSrc==='re'){
-    return Object.values(reProps).reduce((s,p)=>s+(p.currVal||0),0);
+    return Object.values(reProps)
+      .filter(p=>p.inNetworth!=='No')
+      .reduce((s,p)=>{ var cv=p.cmp&&p.area?p.cmp*p.area:(p.totalCost||0); return s+cv; },0);
   }
   if(def.autoSrc==='mf'){
     return Object.values(mfFunds).reduce((s,f)=>s+(f.currVal||0),0);
@@ -2970,10 +3025,1880 @@ function renderNetworth(){
 
   var totalAssets=Object.values(assetVals).reduce((s,v)=>s+v,0);
 
-  // Loans
+  // Loans — use loanDetails if present
+  var loanDetails = nwData.loanDetails||{};
   var loanVals={};
-  NW_LOANS_DEF.forEach(def=>{ loanVals[def.key]=parseFloat(loans[def.key])||0; });
-  Object.entries(extraLoans).forEach(([k,v])=>{ loanVals[k]=parseFloat(v)||0; });
+  if(Object.keys(loanDetails).length>0){
+    // Use detailed loan records
+    Object.entries(loanDetails).forEach(([k,l])=>{ loanVals[k]=l.outstanding||0; });
+  } else {
+    // Fallback to simple loans
+    NW_LOANS_DEF.forEach(def=>{ loanVals[def.key]=parseFloat(loans[def.key])||0; });
+    Object.entries(extraLoans).forEach(([k,v])=>{ loanVals[k]=parseFloat(v)||0; });
+  }
+  var totalLoans=Object.values(loanVals).reduce((s,v)=>s+v,0);
+  var netWorth=totalAssets-totalLoans;
+
+  // Header
+  document.getElementById('nwTotal').textContent=inrLC(netWorth);
+  var now=new Date();
+  var dateStr=now.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});
+  document.getElementById('nwDate').textContent='As of '+dateStr;
+  document.getElementById('nwDateSmall').textContent=dateStr;
+  document.getElementById('nwGrandTotal').textContent=inrLC(netWorth);
+  document.getElementById('nwGrandSub').textContent='₹'+fmt(netWorth);
+  document.getElementById('nwTotalAssets').textContent=inrLC(totalAssets);
+  document.getElementById('nwTotalAssetsSub').textContent='₹'+fmt(totalAssets);
+  document.getElementById('nwTotalLoans').textContent=inrLC(totalLoans);
+  document.getElementById('nwTotalLoansSub').textContent='₹'+fmt(totalLoans);
+
+  // Render asset rows
+  document.getElementById('nwAssetRows').innerHTML=NW_ASSETS_DEF.map(def=>{
+    var v=assetVals[def.key]||0;
+    var pct=totalAssets>0?(v/totalAssets*100):0;
+    var inputField=def.auto
+      ? `<span style="font-size:11px;color:var(--text3);padding:5px 10px;font-style:italic">Auto-filled</span>`
+      : `<div class="nw-rupee-input"><span>₹</span><input type="text" value="${v||''}" placeholder="0" 
+          onchange="nwAssetChanged('${def.key}',this.value)" oninput="nwAssetChanged('${def.key}',this.value)"></div>`;
+    return `<div class="nw-cat-row-v2 ${def.auto?'auto-row':''}">
+      <div class="nw-cat-name">${def.label} ${def.auto?'<span style="font-size:9px;background:var(--blue);color:#fff;padding:1px 6px;border-radius:10px;margin-left:4px">AUTO</span>':''}</div>
+      <div class="nw-val-display"><div class="nw-val-main">${inrLC(v)}</div><div class="nw-val-sub">${pct.toFixed(1)}% of assets</div></div>
+      <div class="nw-val-display" style="min-width:80px"><div class="nw-val-sub">₹${fmt(v)}</div></div>
+      ${inputField}
+      <div></div>
+    </div>`;
+  }).join('');
+
+  // Render loan rows
+  var loanDetails2=nwData.loanDetails||{};
+  var hasDetails=Object.keys(loanDetails2).length>0;
+  if(hasDetails){
+    document.getElementById('nwLoanRows').innerHTML=Object.entries(loanDetails2).map(function(ent){
+      var k=ent[0], l=ent[1];
+      var v=l.outstanding||0;
+      var pct=totalLoans>0?(v/totalLoans*100):0;
+      var daysLeft=l.endDate?Math.ceil((new Date(l.endDate)-Date.now())/86400000):null;
+      return '<div class="nw-cat-row-v2 loan-row">'+
+        '<div>'+
+          '<div class="nw-cat-name" style="color:var(--red)">'+l.name+
+            ' <span style="font-size:9px;background:var(--red-lt);padding:1px 6px;border-radius:10px">'+l.type+'</span></div>'+
+          '<div style="font-size:10px;color:var(--text2);margin-top:2px">'+
+            (l.bank?l.bank+' · ':'')+
+            (l.interest?l.interest+'% p.a. · ':'')+
+            (l.emi?'EMI: '+inrLC(l.emi)+' · ':'')+
+            (daysLeft!==null?(daysLeft>0?daysLeft+'d remaining':'Ended'):'')+'</div>'+
+        '</div>'+
+        '<div class="nw-val-display"><div class="nw-val-main loss-txt">-'+inrLC(v)+'</div>'+
+          '<div class="nw-val-sub">'+pct.toFixed(1)+'% · '+inr(v)+'</div></div>'+
+        '<div></div>'+
+        '<div style="font-size:11px;color:var(--text2);font-style:italic">Outstanding</div>'+
+        '<div style="display:flex;gap:4px">'+
+          '<button class="ib lnedit-btn" data-lk="'+k+'"><i class="ti ti-edit"></i></button>'+
+          '<button class="ib lndel-btn" data-lk="'+k+'" style="color:var(--red)"><i class="ti ti-x"></i></button>'+
+        '</div>'+
+      '</div>';
+    }).join('');
+  } else {
+    document.getElementById('nwLoanRows').innerHTML='<div style="padding:16px;text-align:center;color:var(--text2);font-size:12px">No loans added yet. Click <b>Add Loan with Details</b> to begin.</div>';
+  }
+  // Delegate loan row button clicks
+  var lnRows=document.getElementById('nwLoanRows');
+  if(lnRows){
+    lnRows.onclick=function(ev){
+      var btn=ev.target.closest('button');
+      if(!btn) return;
+      var lk=btn.getAttribute('data-lk');
+      if(btn.classList.contains('lnedit-btn')) openLoanModal(lk);
+      if(btn.classList.contains('lndel-btn')) deleteLoanDetail(lk);
+    };
+  }}
+
+// ── CORPORATE ACTIONS — CHAIN-SAFE ────────────────────────
+// Always stores original purchase qty/buy and recomputes the
+// full chain from scratch. Safe for 10+ years of actions.
+var caStockId = null;
+
+/**
+ * Recompute effective qty & buy price by replaying ALL corporate
+ * actions in chronological order from the original purchase values.
+ * Total invested amount is conserved at every step.
+ */
+function computeEffective(origQty, origBuy, actions){
+  var invested = origQty * origBuy; // NEVER changes
+  var qty = origQty;
+  (actions||[]).forEach(a=>{
+    if(a.type==='bonus'){
+      qty = Math.round(qty * (1 + parseFloat(a.ratio)));
+    } else { // split
+      qty = Math.round(qty * parseFloat(a.ratio));
+    }
+  });
+  var buy = qty > 0 ? parseFloat((invested / qty).toFixed(4)) : origBuy;
+  return { qty, buy, invested };
+}
+
+function openCA(id){
+  caStockId = id;
+  var s = stocks[id];
+  // origQty/origBuy = actual purchase values, stored once and never changed
+  var oQty = s.origQty || s.qty;
+  var oBuy = s.origBuy || s.buy;
+  document.getElementById('ca_stockName').textContent    = s.co;
+  document.getElementById('ca_curQty').textContent       = s.qty+' shares';
+  document.getElementById('ca_curPrice').textContent     = '₹'+fmt(s.buy);
+  document.getElementById('ca_curInvested').textContent  = '₹'+fmt((oQty)*(oBuy),0)+' (original purchase)';
+  document.getElementById('ca_type').value   = '';
+  document.getElementById('ca_date').value   = new Date().toISOString().slice(0,10);
+  document.getElementById('ca_ratio').value  = '';
+  document.getElementById('ca_remark').value = '';
+  document.getElementById('ca_preview').style.display = 'none';
+  renderCAList(s.corpActions||[], oQty, oBuy);
+  document.getElementById('caBg').style.display = 'flex';
+}
+function closeCA(){ document.getElementById('caBg').style.display='none'; caStockId=null; }
+
+function updateCALabel(){
+  var t = document.getElementById('ca_type').value;
+  var lbl = document.getElementById('ca_ratioLabel');
+  if(t==='bonus'){
+    lbl.innerHTML = 'Bonus Ratio — bonus shares per 1 share held<br><span style="font-size:10px;color:var(--text3)">1:1 bonus → 1 &nbsp;|&nbsp; 2:1 bonus → 2 &nbsp;|&nbsp; 1:2 bonus → 0.5</span>';
+  } else if(t==='split'){
+    lbl.innerHTML = 'Split Ratio — new shares per 1 existing share<br><span style="font-size:10px;color:var(--text3)">2:1 split → 2 &nbsp;|&nbsp; 5:1 split → 5 &nbsp;|&nbsp; 10:1 split → 10</span>';
+  }
+}
+
+function updateCAPreview(){
+  updateCALabel();
+  var s = stocks[caStockId];
+  if(!s) return;
+  var type  = document.getElementById('ca_type').value;
+  var ratio = parseFloat(document.getElementById('ca_ratio').value)||0;
+  if(!type||!ratio){ document.getElementById('ca_preview').style.display='none'; return; }
+
+  var oQty = s.origQty || s.qty;
+  var oBuy = s.origBuy || s.buy;
+
+  // Simulate adding this new action to the existing chain
+  var simulatedActions = [...(s.corpActions||[]), {type, ratio}];
+  var after  = computeEffective(oQty, oBuy, simulatedActions);
+  var before = computeEffective(oQty, oBuy, s.corpActions||[]);
+
+  var changeLabel = type==='bonus'
+    ? '+'+(after.qty - before.qty)+' bonus shares added'
+    : 'Each share splits into '+ratio+' (×'+ratio+' shares)';
+
+  document.getElementById('pr_qty').textContent      = after.qty+' shares (was '+before.qty+')';
+  document.getElementById('pr_price').textContent    = '₹'+fmt(after.buy)+' (was ₹'+fmt(before.buy)+')';
+  document.getElementById('pr_invested').textContent = '₹'+fmt(after.invested,0)+' (unchanged ✓)';
+  document.getElementById('pr_change').textContent   = changeLabel;
+  document.getElementById('ca_preview').style.display = 'block';
+}
+
+function renderCAList(actions, origQty, origBuy){
+  var el = document.getElementById('ca_list');
+  if(!actions.length){
+    el.innerHTML='<div style="text-align:center;padding:16px;color:var(--text2);font-size:12px">No corporate actions recorded yet.</div>';
+    return;
+  }
+  // Build running snapshots for display by replaying chain up to each step
+  var snapshots = [];
+  for(var i=0; i<=actions.length; i++){
+    snapshots.push(computeEffective(origQty, origBuy, actions.slice(0,i)));
+  }
+  el.innerHTML = actions.map((a,i)=>{
+    var before = snapshots[i];
+    var after  = snapshots[i+1];
+    var cls    = a.type==='bonus'?'ca-bonus':'ca-split';
+    var label  = a.type==='bonus'?'Bonus Shares':'Stock Split';
+    var d = a.date?new Date(a.date+'T00:00:00').toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}):'-';
+    var isLatest = i === actions.length-1;
+    return `<div class="ca-item">
+      <div class="ca-item-left">
+        <div class="ca-item-title">
+          <span style="font-size:10px;color:var(--text2);margin-right:4px">#${i+1}</span>
+          <span class="ca-badge ${cls}">${label}</span>
+          &nbsp;Ratio: ${a.ratio} &nbsp;|&nbsp; ${d}
+        </div>
+        <div class="ca-item-detail">
+          ${before.qty} shares @ ₹${fmt(before.buy)}
+          → <b>${after.qty} shares @ ₹${fmt(after.buy)}</b>
+          ${a.remark?' &nbsp;|&nbsp; <i>'+a.remark+'</i>':''}
+        </div>
+        ${!isLatest?'<div style="font-size:10px;color:var(--amber);margin-top:2px">⚡ Subsequent actions will be recomputed if this is removed</div>':''}
+      </div>
+      <button class="ib del" onclick='deleteCA(${i})' title="Remove this action and recompute entire chain"><i class="ti ti-arrow-back-up" style="font-size:13px"></i></button>
+    </div>`;
+  }).join('');
+}
+
+async function applyCA(){
+  var s = stocks[caStockId];
+  if(!s){ toast('Stock not found',true); return; }
+  var type   = document.getElementById('ca_type').value;
+  var ratio  = parseFloat(document.getElementById('ca_ratio').value)||0;
+  var date   = document.getElementById('ca_date').value;
+  var remark = document.getElementById('ca_remark').value.trim();
+  if(!type)         { toast('Select action type',true); return; }
+  if(!ratio||ratio<=0){ toast('Enter a valid ratio',true); return; }
+  if(!date)         { toast('Enter action date',true); return; }
+
+  // Preserve original purchase values (set once, never overwritten)
+  var oQty = s.origQty || s.qty;
+  var oBuy = s.origBuy || s.buy;
+
+  var newActions = [...(s.corpActions||[]), { type, ratio, date, remark, appliedAt: Date.now() }];
+  // Sort by date to keep chain in correct order
+  newActions.sort((a,b)=>new Date(a.date)-new Date(b.date));
+
+  // Recompute the FULL chain from originals
+  var effective = computeEffective(oQty, oBuy, newActions);
+
+  try{
+    await db.ref('portfolio/stocks/'+caStockId).update({
+      qty:      effective.qty,
+      buy:      effective.buy,
+      origQty:  oQty,          // lock original purchase values
+      origBuy:  oBuy,
+      corpActions: newActions,
+      updAt:    Date.now()
+    });
+    toast(type==='bonus'
+      ? 'Bonus applied — now '+effective.qty+' shares @ ₹'+fmt(effective.buy)
+      : 'Split applied — now '+effective.qty+' shares @ ₹'+fmt(effective.buy));
+    document.getElementById('ca_type').value  = '';
+    document.getElementById('ca_ratio').value = '';
+    document.getElementById('ca_preview').style.display = 'none';
+  } catch(e){ toast('Error: '+e.message,true); }
+}
+
+async function deleteCA(idx){
+  var s = stocks[caStockId];
+  if(!s) return;
+  var actions = [...(s.corpActions||[])];
+  if(!actions[idx]){ toast('Action not found',true); return; }
+  var a = actions[idx];
+  var oQty = s.origQty || s.qty;
+  var oBuy = s.origBuy || s.buy;
+
+  // Show what recomputed result will be after removing this action
+  var remaining = actions.filter((_,i)=>i!==idx);
+  var recomputed = computeEffective(oQty, oBuy, remaining);
+
+  if(!confirm(
+    'Remove action #'+(idx+1)+' ('+a.type+' ratio:'+a.ratio+' on '+a.date+')?\n\n'+
+    'The full chain will be recomputed.\n'+
+    'New effective: '+recomputed.qty+' shares @ ₹'+recomputed.buy.toFixed(2)+'\n'+
+    'Total invested unchanged: ₹'+(oQty*oBuy).toFixed(0)
+  )) return;
+
+  try{
+    await db.ref('portfolio/stocks/'+caStockId).update({
+      qty:         recomputed.qty,
+      buy:         recomputed.buy,
+      origQty:     oQty,
+      origBuy:     oBuy,
+      corpActions: remaining,
+      updAt:       Date.now()
+    });
+    toast('Action removed — chain recomputed → '+recomputed.qty+' shares @ ₹'+fmt(recomputed.buy));
+  } catch(e){ toast('Error: '+e.message,true); }
+}
+
+
+var APP_VERSION = '11.0';
+
+// ── STATE ──────────────────────────────────────────────────
+var db = null;
+var stocks = {};
+var editId = null;
+var notesStockId = null;
+var noteType = 'old';
+var activeMajor = '';
+var BMAP = {}, BIDX = 0;
+var BC = ['b0','b1','b2','b3','b4','b5'];
+var fetching = false;
+
+function bColor(b){ if(!BMAP[b]){BMAP[b]=BC[BIDX%BC.length];BIDX++;} return BMAP[b]; }
+
+function majorClass(m){
+  if(!m) return 'mc-other';
+  var u = m.toUpperCase();
+  if(u.includes('YTR')) return 'mc-ytr';
+  if(u.includes('LONG') || u.includes('TERM')) return 'mc-lt';
+  if(u.includes('FREE')) return 'mc-fs';
+  return 'mc-other';
+}
+
+// ── CONFIG (hardcoded — no setup needed) ──────────────────
+var FIREBASE_CFG = {
+  apiKey:      "AIzaSyAniXjVEw8-6BfwVkiqN_NJaUM1qhaiX5Q",
+  authDomain:  "skvk-portfolio-tracker.firebaseapp.com",
+  databaseURL: "https://skvk-portfolio-tracker-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId:   "skvk-portfolio-tracker"
+};
+var APP_PASSWORD = "Log@20261"; // Change this to update password
+
+// ── PASSWORD ───────────────────────────────────────────────
+function checkPassword(){
+  var val = document.getElementById('pwInput').value;
+  if(val === APP_PASSWORD){
+    localStorage.setItem('pt_auth','1');
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    startApp();
+  } else {
+    document.getElementById('pwError').style.display = 'block';
+    document.getElementById('pwInput').value = '';
+    document.getElementById('pwInput').focus();
+  }
+}
+
+function togglePwVis(){
+  var inp = document.getElementById('pwInput');
+  var icon = document.getElementById('pwEyeIcon');
+  if(inp.type==='password'){ inp.type='text'; icon.className='ti ti-eye-off'; }
+  else { inp.type='password'; icon.className='ti ti-eye'; }
+}
+
+function resetConfig(){
+  localStorage.removeItem('pt_auth');
+  location.reload();
+}
+
+// ── FIREBASE INIT ──────────────────────────────────────────
+function startApp(){
+  try{
+    if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CFG);
+    db = firebase.database();
+    subscribeToData();
+    subscribeToArchived();
+    toast('Connected ✓','info');
+    startAutoRefresh();
+    subscribeToRE();
+    subscribeToMF();
+    subscribeToNetworth();
+  } catch(e){ toast('Firebase error: '+e.message, true); }
+}
+
+// ── AUTO-REFRESH EVERY 10 MINUTES ─────────────────────────
+var autoRefreshInterval = null;
+var countdownInterval  = null;
+var AUTO_REFRESH_MS    = 10 * 60 * 1000; // 10 minutes
+
+function startAutoRefresh(){
+  // Clear any previous timers
+  if(autoRefreshInterval) clearInterval(autoRefreshInterval);
+  if(countdownInterval)   clearInterval(countdownInterval);
+
+  var nextRefreshAt = Date.now() + AUTO_REFRESH_MS;
+
+  function updateCountdown(){
+    var remaining = Math.max(0, nextRefreshAt - Date.now());
+    var m = Math.floor(remaining / 60000);
+    var s = Math.floor((remaining % 60000) / 1000);
+    var el = document.getElementById('countdownVal');
+    if(el) el.textContent = m+':'+String(s).padStart(2,'0');
+  }
+
+  updateCountdown();
+  countdownInterval = setInterval(updateCountdown, 1000);
+
+  autoRefreshInterval = setInterval(function(){
+    nextRefreshAt = Date.now() + AUTO_REFRESH_MS;
+    fetchAllPrices();
+  }, AUTO_REFRESH_MS);
+}
+
+function subscribeToData(){
+  db.ref('portfolio/stocks').on('value', snap=>{
+    stocks = snap.val() || {};
+    render();
+  });
+}
+
+// ── SAVE / DELETE STOCK ────────────────────────────────────
+async function saveStock(){
+  var broker = document.getElementById('f_broker').value.trim();
+  var co     = document.getElementById('f_co').value.trim();
+  var major  = document.getElementById('f_major').value.trim();
+  if(!broker||!co){ toast('Broker and Company required',true); return; }
+  var qty = parseFloat(document.getElementById('f_qty').value)||0;
+  var buy = parseFloat(document.getElementById('f_buy').value)||0;
+  if(!qty||!buy){ toast('Quantity and Buy Price required',true); return; }
+  var cmpRaw = parseFloat(document.getElementById('f_cmp').value);
+  var noteText = document.getElementById('f_note').value.trim();
+
+  // Build initial notes array
+  var notes = editId && stocks[editId] ? (stocks[editId].notes || []) : [];
+  if(noteText){
+    notes = [{
+      text: noteText,
+      date: new Date().toISOString(),
+      type: 'initial'
+    }, ...notes];
+  }
+
+  var obj = {
+    broker, major: major||'', minor: document.getElementById('f_minor').value.trim(),
+    assetType: (document.getElementById('f_assettype').value||'').trim().toUpperCase(),
+    co: co.toUpperCase(),
+    date: document.getElementById('f_date').value,
+    repDate: document.getElementById('f_repdate').value || '',
+    repBuy: parseFloat(document.getElementById('f_repbuy').value)||0,
+    qty, buy,
+    origQty: editId ? (stocks[editId]?.origQty || qty) : qty,  // locked at first purchase
+    origBuy: editId ? (stocks[editId]?.origBuy || buy) : buy,  // locked at first purchase
+    cmp: isNaN(cmpRaw) ? buy : cmpRaw,
+    ph:  0,
+    model: '',
+    initBroker: document.getElementById('f_initbroker').value.trim(),
+    sl: parseFloat(document.getElementById('f_sl').value)||0,
+    pledged: parseInt(document.getElementById('f_pledged').value)||0,
+    notes: notes,
+    live: editId ? (stocks[editId]?.live||false) : false,
+    updAt: Date.now()
+  };
+  try{
+    if(editId){
+      await db.ref('portfolio/stocks/'+editId).update(obj);
+      toast('Stock updated');
+    } else {
+      await db.ref('portfolio/stocks').push(obj);
+      toast('Stock added');
+    }
+    closeModal();
+  } catch(e){ toast('Save failed: '+e.message,true); }
+}
+
+async function deleteStock(id){
+  if(!confirm('Delete this stock entry?')) return;
+  try{ await db.ref('portfolio/stocks/'+id).remove(); }
+  catch(e){ toast('Delete failed',true); }
+}
+
+// ── NOTES ──────────────────────────────────────────────────
+function openNotes(id){
+  notesStockId = id;
+  var s = stocks[id];
+  document.getElementById('notesTitle').innerHTML = '<i class="ti ti-notes" style="color:var(--amber)"></i> Notes — '+s.co;
+  document.getElementById('newNoteText').value = '';
+  renderNotes(s.notes||[]);
+  document.getElementById('notesBg').style.display = 'flex';
+}
+
+function renderNotes(notes){
+  var el = document.getElementById('notesList');
+  if(!notes.length){
+    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text2)">No notes yet</div>';
+    return;
+  }
+  el.innerHTML = notes.map((n,i)=>{
+    var d = new Date(n.date).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+    var cls = n.type==='new'?'new-note':'old-note';
+    var label = n.type==='new'?'<span style="background:var(--green-lt);color:var(--green);font-size:9px;font-weight:700;padding:1px 6px;border-radius:10px">NEW</span>':'<span style="background:var(--amber-lt);color:var(--amber);font-size:9px;font-weight:700;padding:1px 6px;border-radius:10px">HISTORY</span>';
+    return `<div class="note-item ${cls}">
+      <div class="note-meta"><span>${d} ${label}</span>
+        <button class="btn sm" onclick="deleteNote(${i})" style="color:var(--red);border-color:var(--red);opacity:.7"><i class="ti ti-trash" style="font-size:11px"></i></button>
+      </div>
+      <div class="note-text">${n.text}</div>
+    </div>`;
+  }).join('');
+}
+
+function setNoteType(t){
+  noteType = t;
+  document.getElementById('ntOld').classList.toggle('active', t==='old');
+  document.getElementById('ntNew').classList.toggle('active', t==='new');
+  document.getElementById('ntNew').classList.toggle('new', t==='new');
+}
+
+async function saveNote(){
+  var text = document.getElementById('newNoteText').value.trim();
+  if(!text){ toast('Enter a note',true); return; }
+  var s = stocks[notesStockId];
+  var notes = s.notes||[];
+  var newNote = { text, date: new Date().toISOString(), type: noteType };
+  // New updates go to top, old history goes to end
+  var updated = noteType==='new' ? [newNote,...notes] : [...notes, newNote];
+  try{
+    await db.ref('portfolio/stocks/'+notesStockId+'/notes').set(updated);
+    document.getElementById('newNoteText').value='';
+    toast('Note saved');
+  } catch(e){ toast('Save failed',true); }
+}
+
+async function deleteNote(idx){
+  if(!confirm('Delete this note?')) return;
+  var s = stocks[notesStockId];
+  var notes = [...(s.notes||[])];
+  notes.splice(idx,1);
+  try{
+    await db.ref('portfolio/stocks/'+notesStockId+'/notes').set(notes);
+  } catch(e){ toast('Delete failed',true); }
+}
+
+function closeNotes(){ document.getElementById('notesBg').style.display='none'; notesStockId=null; }
+
+// ── LIVE PRICE FETCH ───────────────────────────────────────
+// Tries Yahoo Finance v7 (batch) via 4 different CORS proxies
+// Falls back to v8 per-symbol if batch fails
+
+var PROXIES = [
+  url => `https://corsproxy.io/?url=${encodeURIComponent(url)}`,
+  url => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
+  url => `https://corsproxy.org/?${encodeURIComponent(url)}`,
+  url => `https://thingproxy.freeboard.io/fetch/${url}`
+];
+
+async function tryFetch(url, timeoutMs){
+  var controller = new AbortController();
+  var timer = setTimeout(()=>controller.abort(), timeoutMs||8000);
+  try{
+    var r = await fetch(url, {signal: controller.signal});
+    clearTimeout(timer);
+    return r;
+  } catch(e){ clearTimeout(timer); throw e; }
+}
+
+async function fetchWithProxies(targetUrl, parseRaw){
+  for(var px of PROXIES){
+    try{
+      var r = await tryFetch(px(targetUrl), 9000);
+      if(!r.ok) continue;
+      var raw = await r.json();
+      // allorigins wraps in {contents: "..."}
+      var data = (raw && raw.contents) ? JSON.parse(raw.contents) : raw;
+      var result = parseRaw(data);
+      if(result) return result;
+    } catch(e){ /* try next proxy */ }
+  }
+  return null;
+}
+
+async function fetchAllPrices(){
+  if(fetching) return;
+  var syms = [...new Set(Object.values(stocks).map(s=>s.co))];
+  if(!syms.length){ toast('No stocks to update',true); return; }
+  fetching = true;
+  var btn = document.getElementById('fetchBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="ti ti-refresh spin"></i>Fetching...';
+  setFetchStatus('Connecting to NSE data...');
+
+  var results = {};
+
+  // ── Strategy 1: Yahoo Finance v7 batch (most efficient) ──
+  var batchSize = 10;
+  for(var i=0; i<syms.length; i+=batchSize){
+    var batch = syms.slice(i, i+batchSize);
+    setFetchStatus('Fetching '+(i+1)+'–'+Math.min(i+batchSize,syms.length)+' of '+syms.length+'...');
+    
+    // Try NSE (.NS) batch first
+    var nseSyms = batch.map(s=>s+'.NS').join(',');
+    var v7url = 'https://query1.finance.yahoo.com/v7/finance/quote?symbols='+nseSyms+'&fields=regularMarketPrice,symbol';
+    
+    var batchResult = await fetchWithProxies(v7url, data=>{
+      var quotes = data?.quoteResponse?.result;
+      if(!quotes || !quotes.length) return null;
+      var map = {};
+      quotes.forEach(q=>{ if(q.regularMarketPrice>0) map[q.symbol.replace('.NS','').replace('.BO','')]=q.regularMarketPrice; });
+      return Object.keys(map).length ? map : null;
+    });
+    
+    if(batchResult){ Object.assign(results, batchResult); continue; }
+
+    // ── Strategy 2: v7 using query2 host ──
+    var v7url2 = 'https://query2.finance.yahoo.com/v7/finance/quote?symbols='+nseSyms+'&fields=regularMarketPrice,symbol';
+    var batchResult2 = await fetchWithProxies(v7url2, data=>{
+      var quotes = data?.quoteResponse?.result;
+      if(!quotes || !quotes.length) return null;
+      var map = {};
+      quotes.forEach(q=>{ if(q.regularMarketPrice>0) map[q.symbol.replace('.NS','').replace('.BO','')]=q.regularMarketPrice; });
+      return Object.keys(map).length ? map : null;
+    });
+    if(batchResult2){ Object.assign(results, batchResult2); continue; }
+
+    // ── Strategy 3: per-symbol v8 chart fallback ──
+    await Promise.allSettled(batch.map(async sym=>{
+      if(results[sym]) return;
+      for(var suffix of ['.NS','.BO']){
+        var chartUrl = 'https://query1.finance.yahoo.com/v8/finance/chart/'+sym+suffix+'?interval=1d&range=1d';
+        var price = await fetchWithProxies(chartUrl, data=>{
+          var p = data?.chart?.result?.[0]?.meta?.regularMarketPrice;
+          return (p&&p>0) ? p : null;
+        });
+        if(price){ results[sym]=price; return; }
+      }
+    }));
+  }
+
+  // ── Write results to Firebase ──
+  var updates={}, updated=0, now=Date.now();
+  Object.entries(stocks).forEach(([id,s])=>{
+    var price = results[s.co];
+    if(price && price>0){
+      updates[id+'/cmp']     = price;
+      updates[id+'/live']    = true;
+      updates[id+'/priceAt'] = now;
+      updated++;
+    }
+  });
+
+  if(Object.keys(updates).length){
+    try{ await db.ref('portfolio/stocks').update(updates); }
+    catch(e){ toast('Firebase write failed: '+e.message, true); }
+  }
+
+  var t = new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+  document.getElementById('lastFetch').textContent = 'Prices at '+t;
+
+  if(updated===0){
+    toast('Could not fetch prices — NSE market may be closed or proxy blocked. Try again.', true);
+    setFetchStatus('⚠ Price fetch failed — try again in a minute');
+  } else {
+    toast('Updated '+updated+'/'+syms.length+' prices ✓');
+    setFetchStatus('');
+  }
+
+  fetching=false;
+  btn.disabled=false;
+  btn.innerHTML='<i class="ti ti-refresh"></i>Live NSE Prices';
+}
+
+function setFetchStatus(msg){
+  var el=document.getElementById('fetchStatus');
+  el.style.display=msg?'block':'none'; el.textContent=msg;
+}
+
+// ── CALC ───────────────────────────────────────────────────
+function calc(s){
+  var bc=(s.qty||0)*(s.buy||0);
+  var cv=(s.qty||0)*(s.cmp||s.buy||0);
+  var pnl=cv-bc; var pct=bc>0?(pnl/bc*100):0;
+  // Repurchase P&L: based on repBuy price (if set)
+  var repBuy = s.repBuy || 0;
+  var rbc = repBuy > 0 ? (s.qty||0)*repBuy : null;
+  var rpnl = rbc !== null ? cv - rbc : null;
+  var rpct = rbc !== null && rbc > 0 ? (rpnl/rbc*100) : null;
+  return{bc,cv,pnl,pct,rbc,rpnl,rpct};
+}
+function days(d){ if(!d)return null; return Math.floor((Date.now()-new Date(d))/864e5); }
+
+// Effective date = repurchase/transfer date if set, else initial purchase date
+function effectiveDate(s){ return (s.repDate && s.repDate.trim()) ? s.repDate : s.date; }
+
+function daysBadge(s){
+  var d = days(effectiveDate(s));
+  if(d===null) return '<span style="color:var(--text3)">—</span>';
+  var isLTCG = d >= 366;
+  var cls = isLTCG ? 'days-ltcg' : 'days-stcg';
+  var tip = d+' days from '+(s.repDate?'transfer':'purchase')+' date — '+(isLTCG?'LTCG':'STCG');
+  return '<span class="days-badge '+cls+'" title="'+tip+'">'+d+'d</span>';
+}
+
+function daysArchBadge(n){
+  if(!n && n!==0) return '—';
+  var isLTCG = n >= 366;
+  var cls = isLTCG ? 'days-ltcg' : 'days-stcg';
+  return '<span class="days-badge '+cls+'">'+n+'d</span>';
+}
+
+function fmtDate(d){
+  if(!d) return '—';
+  return new Date(d+'T00:00:00').toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'2-digit'});
+}
+function inr(n){ return '₹'+Math.abs(n).toLocaleString('en-IN',{maximumFractionDigits:0}); }
+function fmt(n,dp=2){ return Number(n).toLocaleString('en-IN',{maximumFractionDigits:dp}); }
+
+// ── MAJOR CATEGORY FILTER TABS ─────────────────────────────
+function setMajorFilter(val){
+  activeMajor = val;
+  render();
+}
+
+function renderCatTabs(){
+  var majors=[...new Set(Object.values(stocks).map(s=>s.major||'').filter(Boolean))].sort();
+  var tabsEl = document.getElementById('catTabs');
+  var all = `<span class="cat-tab all${activeMajor===''?' active':''}" onclick="setMajorFilter('')">All <span style="font-size:10px;opacity:.7">(${Object.keys(stocks).length})</span></span>`;
+  var tabs = majors.map(m=>{
+    var cnt = Object.values(stocks).filter(s=>(s.major||'')=== m).length;
+    var mc = majorClass(m);
+    return `<span class="cat-tab${activeMajor===m?' active':''}" style="${activeMajor===m?'':'background:var(--bg3)'}" onclick="setMajorFilter('${m}')">${m} <span style="font-size:10px;opacity:.7">(${cnt})</span></span>`;
+  }).join('');
+  tabsEl.innerHTML = all+tabs;
+}
+
+// ── RENDER ─────────────────────────────────────────────────
+function render(){
+  renderCatTabs();
+  var arr = Object.entries(stocks).map(([id,s])=>({...s,_id:id}));
+  var q   = (document.getElementById('searchQ').value||'').toLowerCase();
+  var fb  = document.getElementById('fBroker').value;
+  var fmaj = document.getElementById('fMajor').value;
+  var fm  = document.getElementById('fMinor').value;
+  var fat = document.getElementById('fAssetType').value;
+  var so  = document.getElementById('fSort').value;
+
+  arr = arr.filter(s=>{
+    if(activeMajor && (s.major||'')!==activeMajor) return false;
+    if(q){
+      var notesText=(s.notes||[]).map(n=>n.text).join(' ').toLowerCase();
+      if(!s.co.toLowerCase().includes(q)&&!notesText.includes(q)&&!(s.minor||'').toLowerCase().includes(q)) return false;
+    }
+    if(fb && s.broker!==fb) return false;
+    if(fmaj && (s.major||'')!==fmaj) return false;
+    if(fm && (s.minor||'')!==fm) return false;
+    if(fat && (s.assetType||'')!==fat) return false;
+    return true;
+  });
+
+  if(so==='pct_d') arr.sort((a,b)=>calc(b).pct-calc(a).pct);
+  else if(so==='pct_a') arr.sort((a,b)=>calc(a).pct-calc(b).pct);
+  else if(so==='val_d') arr.sort((a,b)=>calc(b).cv-calc(a).cv);
+  else if(so==='date_a') arr.sort((a,b)=>new Date(a.date)-new Date(b.date));
+  else if(so==='co_a') arr.sort((a,b)=>a.co.localeCompare(b.co));
+
+  updateSummary(arr);
+  updateFilters();
+
+  var tb=document.getElementById('tbody');
+  if(!arr.length){
+    tb.innerHTML=`<tr class="empty-row"><td colspan="26">${Object.keys(stocks).length?'No results match your filter.':'<b>No stocks yet.</b> Click <b>+ Add Stock</b> to begin.'}</td></tr>`;
+    return;
+  }
+  tb.innerHTML = arr.map(s=>{
+    var c=calc(s);
+    var rc=c.pnl>0?'rg':c.pnl<0?'rl':'';
+    var pc=c.pnl>=0?'gain-txt':'loss-txt';
+    var bp=c.pct>=0?'bg':'br';
+    var dot=s.live?'<span class="live-dot" title="Live NSE price"></span>':'<span class="stale-dot" title="Manual price"></span>';
+    var notes=s.notes||[];
+    var latestNote=notes.length?notes[0]:'';
+    var notePreview=latestNote?`<span class="notes-preview" onclick='openNotes("${s._id}")' title="${latestNote.text}">${latestNote.text.slice(0,40)}${latestNote.text.length>40?'…':''}</span>`:'<span style="color:var(--text3);font-size:11px">—</span>';
+    var noteBadge=notes.length>1?`<span class="note-count">+${notes.length-1}</span>`:'';
+    var heldD = days(effectiveDate(s))||0;
+    var taxBadge = heldD>=366
+      ? '<span class="tax-ltcg">LTCG</span>'
+      : '<span class="tax-stcg">STCG</span>';
+    var caActions = s.corpActions||[];
+    var caBadge = caActions.length ? caActions.map(a=>`<span class="ca-badge ${a.type==='bonus'?'ca-bonus':'ca-split'}">${a.type==='bonus'?'B':'S'}</span>`).join('') : '';
+    return `<tr class="${rc}">
+      <td><span class="tag ${bColor(s.broker)}">${s.broker||'—'}</span></td>
+      <td class="cb-cell" style="display:none"><input type="checkbox" class="row-cb" value="${s._id}" onchange="rowCBChanged()"></td>
+      <td><span class="asset-badge ${(s.assetType||'').toLowerCase().replace(' ','')}">${s.assetType||'—'}</span></td>
+      <td><span class="tag ${majorClass(s.major)}" style="white-space:nowrap">${s.major||'—'}</span></td>
+      <td><span class="minor-tag" title="${s.minor||''}">${s.minor||'—'}</span></td>
+      <td class="bold">${s.co}${caBadge}</td>
+      <td style="font-size:11px"><div class="date-cell"><span class="date-main">${fmtDate(s.date)}</span></div></td>
+      <td style="font-size:11px"><div class="date-cell">
+        ${s.repDate
+          ? '<span class="date-main">'+fmtDate(s.repDate)+'</span>'
+          : '<span class="date-sub" style="font-style:italic">= Buy date</span>'}
+      </div></td>
+      <td class="r">${fmt(s.qty||0,0)}</td>
+      <td class="r" style="font-variant-numeric:tabular-nums">₹${fmt(s.buy||0)}</td>
+      <td class="r" style="font-variant-numeric:tabular-nums">${s.repBuy && s.repBuy>0 ? '₹'+fmt(s.repBuy) : '<span style="color:var(--text3);font-size:11px">—</span>'}</td>
+      <td class="r"><div class="cmp-wrap">${dot}₹${fmt(s.cmp||0)}</div></td>
+      <td class="r">₹${fmt(c.bc,0)}</td>
+      <td class="r">₹${fmt(c.cv,0)}</td>
+      <td class="r ${pc}" title="Init P&amp;L based on original buy price">${c.pnl>=0?'+':'-'}${inr(c.pnl)}</td>
+      <td class="r" title="Init P&amp;L %"><span class="badge ${bp}">${c.pct>=0?'+':''}${c.pct.toFixed(1)}%</span></td>
+      <td class="r ${c.rpnl!==null?(c.rpnl>=0?'gain-txt':'loss-txt'):''}" title="Repurchase P&amp;L based on repurchase price">${c.rpnl!==null ? (c.rpnl>=0?'+':'-')+inr(c.rpnl) : '<span style="color:var(--text3);font-size:11px">—</span>'}</td>
+      <td class="r" title="Repurchase P&amp;L %">${c.rpct!==null ? '<span class="badge '+(c.rpct>=0?'bg':'br')+'">'+(c.rpct>=0?'+':'')+c.rpct.toFixed(1)+'%</span>' : '<span style="color:var(--text3);font-size:11px">—</span>'}</td>
+      <td class="r">${daysBadge(s)}</td>
+      <td class="r" style="font-size:11px">${s.pledged||'—'}</td>
+      <td style="font-size:11px;color:var(--text2);max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${s.initBroker||''}">${s.initBroker||'—'}</td>
+      <td style="max-width:140px">${notePreview}${noteBadge}</td>
+      <td>${taxBadge}</td>
+      <td class="r" style="font-size:12px;font-variant-numeric:tabular-nums">${s.sl && s.sl > 0 ? '<span style="font-size:12px">₹'+fmt(s.sl)+'</span>' : '<span style="color:var(--text3)">—</span>'}</td>
+      <td>${(()=>{
+        if(!s.sl || s.sl <= 0) return '<span style="color:var(--text3);font-size:11px">—</span>';
+        var cmp = s.cmp || s.buy || 0;
+        if(cmp <= s.sl) return '<span class="sl-hit">🔴 HIT</span>';
+        return '<span class="sl-safe">🟢 Safe</span>';
+      })()}</td>
+      <td>${(()=>{
+        var isTransferred = !!(s.repDate && s.repDate.trim());
+        var cls = isTransferred ? 'yes' : 'no';
+        var lbl = isTransferred ? '✓ Yes' : '✗ No';
+        var tip = isTransferred ? 'Transferred on '+fmtDate(s.repDate)+' — tax calculated from transfer date' : 'Not transferred — tax calculated from buy date';
+        return '<span class="transferred-badge '+cls+'" title="'+tip+'">'+lbl+'</span>';
+      })()}</td>
+      <td><div class="acts">
+        <button class="ib corp" onclick='openCA("${s._id}")' title="Bonus / Split"><i class="ti ti-building-bank"></i></button>
+        <button class="ib note" onclick='openNotes("${s._id}")' title="Notes history"><i class="ti ti-notes"></i></button>
+        <button class="ib" onclick='openModal("${s._id}")' title="Edit"><i class="ti ti-edit"></i></button>
+        <button class="ib sell" onclick='openSell("${s._id}")' title="Sell / Archive"><i class="ti ti-tag"></i></button>
+        <button class="ib del" onclick='deleteStock("${s._id}")' title="Delete"><i class="ti ti-trash"></i></button>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+function updateSummary(arr){
+  var tb=0,tc=0,totalDays=0,dCount=0;
+  arr.forEach(s=>{
+    var c=calc(s); tb+=c.bc; tc+=c.cv;
+    var d=days(effectiveDate(s));
+    if(d!==null){ totalDays+=d; dCount++; }
+  });
+  var pnl=tc-tb, pct=tb>0?(pnl/tb*100):0;
+  var avgD = dCount>0?Math.round(totalDays/dCount):null;
+  document.getElementById('s_invested').innerHTML=inrLC(tb)+'<div style="font-size:11px;color:var(--text2);font-weight:400;margin-top:2px">'+inr(tb)+'</div>';
+  document.getElementById('s_value').innerHTML=inrLC(tc)+'<div style="font-size:11px;color:var(--text2);font-weight:400;margin-top:2px">'+inr(tc)+'</div>';
+  var pe=document.getElementById('s_pnl');
+  var pnlAbs=Math.abs(pnl);
+  pe.innerHTML=(pnl>=0?'+':'-')+inrLC(pnlAbs)+'<div style="font-size:11px;font-weight:400;margin-top:2px">'+(pnl>=0?'+':'-')+inr(pnlAbs)+'</div>';
+  pe.className='val '+(pnl>=0?'pos':'neg');
+  var pr=document.getElementById('s_pct');
+  pr.textContent=(pnl>=0?'+':'')+pct.toFixed(1)+'%'; pr.className='val '+(pnl>=0?'pos':'neg');
+  var ad=document.getElementById('s_avgdays');
+  if(avgD!==null){
+    var adCls = avgD<=30?'pos': avgD<=180?'':'neg';
+    ad.textContent = avgD+' days';
+    ad.className = 'val '+adCls;
+  } else {
+    ad.textContent='—'; ad.className='val';
+  }
+}
+
+function updateFilters(){
+  var bv=document.getElementById('fBroker').value;
+  var mv=document.getElementById('fMinor').value;
+  var brokers=[...new Set(Object.values(stocks).map(s=>s.broker).filter(Boolean))];
+  // Populate Major filter
+  var majorsArr=[...new Set(Object.values(stocks).map(s=>s.major).filter(Boolean))].sort();
+  var fmajEl=document.getElementById('fMajor');
+  var fmajV=fmajEl.value;
+  fmajEl.innerHTML='<option value="">All major categories</option>'+majorsArr.map(m=>`<option value="${m}">${m}</option>`).join('');
+  fmajEl.value=fmajV;
+  // Populate Asset Type filter
+  var atArr=[...new Set(Object.values(stocks).map(s=>s.assetType).filter(Boolean))].sort();
+  var fatEl=document.getElementById('fAssetType');
+  var fatV=fatEl.value;
+  fatEl.innerHTML='<option value="">All asset types</option>'+atArr.map(a=>`<option value="${a}">${a}</option>`).join('');
+  fatEl.value=fatV;
+  var minors=[...new Set(Object.values(stocks).map(s=>s.minor).filter(Boolean))];
+  document.getElementById('fBroker').innerHTML='<option value="">All brokers</option>'+brokers.map(b=>`<option${b===bv?' selected':''}>${b}</option>`).join('');
+  document.getElementById('fMinor').innerHTML='<option value="">All minor categories</option>'+minors.map(m=>`<option${m===mv?' selected':''}>${m}</option>`).join('');
+  document.getElementById('dBroker').innerHTML=brokers.map(b=>`<option value="${b}">`).join('');
+  document.getElementById('dMinor').innerHTML=minors.map(m=>`<option value="${m}">`).join('');
+  var majors=[...new Set(Object.values(stocks).map(s=>s.major).filter(Boolean))];
+  document.getElementById('dMajor').innerHTML=['YTR','LONG TERM INVEST','FREESHARE','SWING TRADE','MOMENTUM','DIVIDEND',...majors].filter((v,i,a)=>a.indexOf(v)===i).map(m=>`<option value="${m}">`).join('');
+}
+
+// ── MODAL ──────────────────────────────────────────────────
+function openModal(id){
+  editId=id||null;
+  var s=id?stocks[id]:null;
+  document.getElementById('modalTitle').innerHTML=(s?'<i class="ti ti-pencil"></i>Edit Stock':'<i class="ti ti-plus"></i>Add Stock');
+  document.getElementById('f_broker').value=s?.broker||'';
+  document.getElementById('f_major').value=s?.major||'';
+  document.getElementById('f_minor').value=s?.minor||'';
+  document.getElementById('f_assettype').value=s?.assetType||'';
+  document.getElementById('f_co').value=s?.co||'';
+  document.getElementById('f_date').value=s?.date||'';
+  document.getElementById('f_repdate').value=s?.repDate||'';
+  document.getElementById('f_repbuy').value=s?.repBuy||'';
+  document.getElementById('f_qty').value=s?.qty||'';
+  document.getElementById('f_buy').value=s?.buy||'';
+  document.getElementById('f_cmp').value=s?.cmp||'';
+  document.getElementById('f_sl').value=s?.sl||'';
+  document.getElementById('f_pledged').value=s?.pledged||'';
+  document.getElementById('f_initbroker').value=s?.initBroker||'';
+  document.getElementById('f_note').value='';
+  document.getElementById('sellFromEditBtn').style.display = s ? 'inline-flex' : 'none';
+  document.getElementById('modalBg').style.display='flex';
+}
+function closeModal(){ document.getElementById('modalBg').style.display='none'; editId=null; }
+
+// ── EXPORT ─────────────────────────────────────────────────
+function exportCSV(){
+  var arr=Object.values(stocks);
+  if(!arr.length){toast('Nothing to export',true);return;}
+  var h=['Broker','Asset Type','Major Category','Minor Category','Company','Buy Date','Transfer Date','Hold From','Qty','Init Buy Price','Rep. Buy Price','CMP','Total Buy Value','Current Asset Value','Init P&L ₹','Init P&L %','Rep. P&L ₹','Rep. P&L %','Days Held','Tax Status','Pledged Qty','Initial Broker','Latest Note','Notes Count','Price Source','Stop Loss ₹','SL Hit?','Transferred?'];
+  var rows=arr.map(s=>{
+    var c=calc(s);
+    var notes=s.notes||[];
+    var latest=notes.length?notes[0].text:'';
+    var dHeld = days(effectiveDate(s))||0;
+    var slHit = (!s.sl||s.sl<=0)?'—':((s.cmp||s.buy||0)<=s.sl?'HIT':'Safe');
+    return[s.broker,s.assetType||'',s.major,s.minor,s.co,s.date,s.repDate||'',effectiveDate(s),s.qty,s.buy,s.repBuy||'',s.cmp,c.bc.toFixed(0),c.cv.toFixed(0),c.pnl.toFixed(0),c.pct.toFixed(2),c.rpnl!==null?c.rpnl.toFixed(0):'',c.rpct!==null?c.rpct.toFixed(2):'',dHeld,dHeld>=366?'LTCG':'STCG',s.pledged,s.initBroker||'',latest,notes.length,s.live?'Live NSE':'Manual',s.sl||'',slHit,(s.repDate && s.repDate.trim())?'Yes ('+s.repDate+')':'No'];
+  });
+  var csv=[h,...rows].map(r=>r.map(x=>`"${(x||'').toString().replace(/"/g,'""')}"`).join(',')).join('\n');
+  var a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);
+  a.download='portfolio_v2_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+}
+
+// ── TOAST ──────────────────────────────────────────────────
+function toast(msg,type){
+  var t=document.createElement('div');
+  t.className='toast '+(type===true?'err':type||'ok');
+  t.textContent=msg;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(),3500);
+}
+
+// ── SELL & ARCHIVE ─────────────────────────────────────────
+var archived = {};
+var sellStockId = null;
+
+function subscribeToArchived(){
+  db.ref('portfolio/archived').on('value', snap=>{
+    archived = snap.val() || {};
+    renderArchived();
+  });
+}
+
+function openSell(id){
+  sellStockId = id;
+  var s = stocks[id];
+  var today = new Date().toISOString().slice(0,10);
+  document.getElementById('sell_stockName').textContent = s.co;
+  document.getElementById('sell_broker').textContent = ' '+s.broker;
+  document.getElementById('sell_buyPrice').textContent = ' ₹'+fmt(s.buy);
+  document.getElementById('sell_availQty').textContent = ' '+s.qty;
+  document.getElementById('sell_cmp').textContent = ' ₹'+fmt(s.cmp||s.buy);
+  document.getElementById('sell_qtyHint').textContent = '(max: '+s.qty+')';
+  document.getElementById('sell_date').value = today;
+  document.getElementById('sell_price').value = s.cmp||'';
+  document.getElementById('sell_qty').value = s.qty;
+  document.getElementById('sell_notes').value = '';
+  document.getElementById('sellPnlPreview').style.display = 'none';
+  updateSellPreview();
+  document.getElementById('sellBg').style.display = 'flex';
+}
+
+function openSellFromEdit(){
+  closeModal();
+  if(editId) openSell(editId);
+}
+
+function closeSell(){ document.getElementById('sellBg').style.display='none'; sellStockId=null; }
+
+function updateSellPreview(){
+  var s = stocks[sellStockId];
+  if(!s) return;
+  var sellPrice = parseFloat(document.getElementById('sell_price').value)||0;
+  var sellQty   = parseFloat(document.getElementById('sell_qty').value)||0;
+  if(!sellPrice||!sellQty) return;
+  var invested  = sellQty * (s.buy||0);
+  var sellVal   = sellQty * sellPrice;
+  var pnl       = sellVal - invested;
+  var pct       = invested>0?(pnl/invested*100):0;
+  var el = document.getElementById('sellPnlPreview');
+  el.style.display = 'block';
+  el.className = 'sell-pnl-preview'+(pnl<0?' loss':'');
+  el.innerHTML = (pnl>=0?'🟢':'🔴')+' Realized P&L: '+(pnl>=0?'+':'')+inr(pnl)+' ('+pct.toFixed(1)+'%) &nbsp;|&nbsp; Sell Value: ₹'+fmt(sellVal,0);
+}
+
+async function processSell(){
+  var s = stocks[sellStockId];
+  if(!s){ toast('Stock not found',true); return; }
+  var sellDate  = document.getElementById('sell_date').value;
+  var sellPrice = parseFloat(document.getElementById('sell_price').value)||0;
+  var sellQty   = parseFloat(document.getElementById('sell_qty').value)||0;
+  var sellNotes = document.getElementById('sell_notes').value.trim();
+
+  if(!sellDate||!sellPrice||!sellQty){ toast('Date, Price and Qty are required',true); return; }
+  if(sellQty > s.qty){ toast('Sell qty cannot exceed available qty ('+s.qty+')',true); return; }
+
+  var invested = sellQty*(s.buy||0);
+  var sellVal  = sellQty*sellPrice;
+  var pnl      = sellVal - invested;
+  var pct      = invested>0?(pnl/invested*100):0;
+  var buyDays  = days(effectiveDate(s)) || 0;
+
+  // Archive entry
+  var archEntry = {
+    broker: s.broker, major: s.major||'', minor: s.minor||'', co: s.co,
+    buyDate: s.date, sellDate,
+    buyPrice: s.buy, sellPrice, qtySold: sellQty,
+    invested, sellVal, pnl, pct,
+    heldDays: buyDays,
+    model: s.model||'', sellNotes,
+    archivedAt: Date.now()
+  };
+
+  try{
+    // Write archived entry
+    await db.ref('portfolio/archived').push(archEntry);
+
+    var remaining = s.qty - sellQty;
+    if(remaining <= 0){
+      // Full sell → remove from active
+      await db.ref('portfolio/stocks/'+sellStockId).remove();
+      toast(s.co+' fully sold & archived ✓');
+    } else {
+      // Partial sell → reduce qty in active
+      await db.ref('portfolio/stocks/'+sellStockId).update({qty: remaining, updAt: Date.now()});
+      toast(s.co+' partial sell archived. Remaining: '+remaining+' shares');
+    }
+    closeSell();
+    // Auto-show archived section
+    document.getElementById('archSection').style.display = 'block';
+    document.getElementById('archToggleBtn').innerHTML = '<i class="ti ti-chevron-up"></i>Hide';
+  } catch(e){ toast('Error: '+e.message, true); }
+}
+
+// ── ARCHIVED TABLE RENDER ──────────────────────────────────
+var archVisible = false;
+function toggleArchived(){
+  archVisible = !archVisible;
+  document.getElementById('archSection').style.display = archVisible?'block':'none';
+  document.getElementById('archToggleBtn').innerHTML = archVisible
+    ? '<i class="ti ti-chevron-up"></i>Hide'
+    : '<i class="ti ti-chevron-down"></i>Show';
+}
+
+function renderArchived(){
+  var arr = Object.entries(archived).map(([id,a])=>({...a,_id:id}));
+  document.getElementById('archCount').textContent = arr.length;
+
+  // Summary
+  var ti=0, ts=0;
+  arr.forEach(a=>{ ti+=a.invested||0; ts+=a.sellVal||0; });
+  var rpnl=ts-ti, rpct=ti>0?(rpnl/ti*100):0;
+  document.getElementById('a_invested').textContent = ti?inr(ti):'—';
+  document.getElementById('a_sold').textContent     = ts?inr(ts):'—';
+  var ap=document.getElementById('a_pnl');
+  ap.textContent=(rpnl>=0?'+':'-')+inr(rpnl);
+  ap.className='val '+(rpnl>=0?'realized-pos':'realized-neg');
+  var apc=document.getElementById('a_pct');
+  apc.textContent=(rpnl>=0?'+':'')+rpct.toFixed(1)+'%';
+  apc.className='val '+(rpnl>=0?'realized-pos':'realized-neg');
+
+  // Sort by sell date desc
+  arr.sort((a,b)=>new Date(b.sellDate)-new Date(a.sellDate));
+
+  var tb = document.getElementById('archBody');
+  if(!arr.length){
+    tb.innerHTML='<tr><td colspan="16" class="empty-row" style="text-align:center;padding:32px;color:var(--text2)">No sold stocks yet.</td></tr>';
+    return;
+  }
+  tb.innerHTML = arr.map(a=>{
+    var pnlCls = a.pnl>=0?'gain-txt':'loss-txt';
+    var bpCls  = a.pct>=0?'bg':'br';
+    var buyFmt = a.buyDate?new Date(a.buyDate+'T00:00:00').toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'2-digit'}):'-';
+    var sellFmt= a.sellDate?new Date(a.sellDate+'T00:00:00').toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'2-digit'}):'-';
+    return `<tr>
+      <td><span class="tag ${bColor(a.broker)}">${a.broker}</span></td>
+      <td><span class="tag ${majorClass(a.major)}">${a.major||'—'}</span></td>
+      <td style="font-size:10px;color:var(--text2)">${a.minor||'—'}</td>
+      <td class="bold">${a.co}</td>
+      <td style="font-size:11px">${buyFmt}</td>
+      <td style="font-size:11px">${sellFmt}</td>
+      <td class="r">${fmt(a.qtySold,0)}</td>
+      <td class="r">₹${fmt(a.buyPrice)}</td>
+      <td class="r">₹${fmt(a.sellPrice)}</td>
+      <td class="r">₹${fmt(a.invested,0)}</td>
+      <td class="r">₹${fmt(a.sellVal,0)}</td>
+      <td class="r ${pnlCls}">${a.pnl>=0?'+':'-'}${inr(a.pnl)}</td>
+      <td class="r"><span class="badge ${bpCls}">${a.pct>=0?'+':''}${a.pct.toFixed(1)}%</span></td>
+      <td class="r">${daysArchBadge(a.heldDays)}</td>
+      <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;font-size:11px;color:var(--text2)" title="${a.sellNotes||''}">${a.sellNotes||'—'}</td>
+      <td><button class="ib del" onclick='deleteArchived("${a._id}")' title="Delete record"><i class="ti ti-trash"></i></button></td>
+    </tr>`;
+  }).join('');
+}
+
+async function deleteArchived(id){
+  if(!confirm('Remove this archived entry?')) return;
+  try{ await db.ref('portfolio/archived/'+id).remove(); }
+  catch(e){ toast('Delete failed',true); }
+}
+
+
+// ══════════════════════════════════════════════════════════════
+// ── PAGE TAB NAVIGATION ───────────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+var currentPageTab = 'equity';
+function showPageTab(name){
+  ['equity','allocation','realestate','mutualfunds','networth'].forEach(t=>{
+    var el=document.getElementById('page-'+t);
+    var btn=document.getElementById('ptab-'+t);
+    if(el) el.style.display = t===name ? '' : 'none';
+    if(btn) btn.classList.toggle('active', t===name);
+  });
+  currentPageTab = name;
+  if(name==='allocation') renderAllocation();
+  if(name==='realestate')  renderRealEstate();
+  if(name==='mutualfunds') renderMutualFunds();
+  if(name==='networth')    renderNetworth();
+}
+
+// ══════════════════════════════════════════════════════════════
+// ── PIN SYSTEM ────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+var isUnlocked = false;
+var autoLockTimer = null;
+var DEFAULT_PIN = '1234';
+var changePinStep = 0; // 0=verify, 1=newpin, 2=confirm
+var newPinTemp = '';
+
+async function sha256(str){
+  var buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+async function getStoredPinHash(){
+  try{
+    var snap = await db.ref('portfolio/settings/privatePin').once('value');
+    if(snap.val()) return snap.val();
+    // First time: set default
+    var h = await sha256(DEFAULT_PIN);
+    await db.ref('portfolio/settings/privatePin').set(h);
+    return h;
+  } catch(e){ return null; }
+}
+
+function openPinModal(){
+  if(isUnlocked){ lockPrivateTabs(); return; }
+  changePinStep = 0;
+  document.getElementById('pinTitle').textContent = '🔒 Enter Private PIN';
+  document.getElementById('pinSubtitle').textContent = 'Enter your PIN to access Real Estate & Networth tabs';
+  document.getElementById('pinInput').value='';
+  document.getElementById('pinError').textContent='';
+  document.getElementById('pinOverlay').style.display='flex';
+  setTimeout(()=>document.getElementById('pinInput').focus(),100);
+}
+
+function closePinModal(){
+  document.getElementById('pinOverlay').style.display='none';
+  changePinStep=0;
+}
+
+function closePinOnOutside(e){
+  if(e.target===document.getElementById('pinOverlay')) closePinModal();
+}
+
+function pinInputChanged(){
+  document.getElementById('pinError').textContent='';
+}
+
+async function verifyPin(){
+  var entered = document.getElementById('pinInput').value;
+  if(!entered){ document.getElementById('pinError').textContent='Please enter your PIN'; return; }
+
+  if(changePinStep===1){
+    // Saving new PIN
+    newPinTemp = entered;
+    changePinStep=2;
+    document.getElementById('pinTitle').textContent='🔒 Confirm New PIN';
+    document.getElementById('pinSubtitle').textContent='Re-enter new PIN to confirm';
+    document.getElementById('pinInput').value='';
+    return;
+  }
+  if(changePinStep===2){
+    // Confirming new PIN
+    if(entered!==newPinTemp){
+      document.getElementById('pinError').textContent='PINs do not match. Try again.';
+      changePinStep=1;
+      document.getElementById('pinTitle').textContent='🔒 Set New PIN';
+      document.getElementById('pinSubtitle').textContent='Enter your new PIN (4-6 digits)';
+      document.getElementById('pinInput').value='';
+      return;
+    }
+    var h = await sha256(newPinTemp);
+    await db.ref('portfolio/settings/privatePin').set(h);
+    toast('PIN updated successfully!');
+    closePinModal();
+    return;
+  }
+
+  // Normal verify
+  var stored = await getStoredPinHash();
+  var enteredH = await sha256(entered);
+  if(enteredH===stored){
+    isUnlocked=true;
+    document.getElementById('privateTabs').style.display='contents';
+    document.getElementById('lockBtn').textContent='🔓 Locked';
+    document.getElementById('lockBtn').classList.add('unlocked');
+    closePinModal();
+    toast('Private tabs unlocked ✓');
+    resetAutoLock();
+  } else {
+    document.getElementById('pinError').textContent='Incorrect PIN. Try again.';
+    document.getElementById('pinInput').value='';
+    document.getElementById('pinInput').focus();
+  }
+}
+
+function showChangePinUI(){
+  changePinStep=1;
+  document.getElementById('pinTitle').textContent='🔒 Set New PIN';
+  document.getElementById('pinSubtitle').textContent='Enter your new PIN (4-6 digits)';
+  document.getElementById('pinInput').value='';
+  document.getElementById('pinError').textContent='';
+}
+
+function lockPrivateTabs(){
+  isUnlocked=false;
+  document.getElementById('privateTabs').style.display='none';
+  document.getElementById('lockBtn').textContent='🔒 Private';
+  document.getElementById('lockBtn').classList.remove('unlocked');
+  if(['realestate','networth'].includes(currentPageTab)) showPageTab('equity');
+  if(autoLockTimer) clearTimeout(autoLockTimer);
+  toast('Private tabs locked');
+}
+
+function resetAutoLock(){
+  if(autoLockTimer) clearTimeout(autoLockTimer);
+  autoLockTimer = setTimeout(()=>{ if(isUnlocked) lockPrivateTabs(); }, 30*60*1000);
+}
+
+// ══════════════════════════════════════════════════════════════
+// ── BULK EDIT ─────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+var bulkMode = false;
+function toggleBulkEdit(){
+  bulkMode = !bulkMode;
+  document.getElementById('bulkToggleBtn').style.display='inline-flex';
+  document.getElementById('bulkToggleBtn').textContent = bulkMode ? '✕ Exit Bulk' : '☑ Bulk Edit';
+  // Show/hide checkbox columns
+  document.querySelectorAll('.cb-cell,.row-cb').forEach(el=>el.style.display=bulkMode?'':'none');
+  document.getElementById('thCB').style.display=bulkMode?'':'none';
+  if(bulkMode){
+    showBulkBar();
+  } else {
+    hideBulkBar();
+  }
+}
+
+function showBulkBar(){
+  var existing = document.getElementById('bulkActionBar');
+  if(existing) return;
+  var bar = document.createElement('div');
+  bar.className='bulk-bar'; bar.id='bulkActionBar';
+  bar.innerHTML=`
+    <span id="bulkCount" style="white-space:nowrap">0 selected</span>
+    <select id="bulkField">
+      <option value="">Change field...</option>
+      <option value="assetType">Asset Type</option>
+      <option value="major">Major Category</option>
+      <option value="minor">Minor Category</option>
+      <option value="broker">Broker</option>
+    </select>
+    <input id="bulkValue" placeholder="New value..." list="bulkValueList">
+    <datalist id="bulkValueList"></datalist>
+    <button class="btn primary" onclick="applyBulkEdit()" style="white-space:nowrap">Apply to Selected</button>
+    <button class="btn" onclick="toggleBulkEdit()" style="white-space:nowrap;background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2);color:#fff">Exit</button>
+  `;
+  document.body.appendChild(bar);
+  document.getElementById('bulkField').addEventListener('change', updateBulkValueList);
+}
+
+function hideBulkBar(){
+  var bar = document.getElementById('bulkActionBar');
+  if(bar) bar.remove();
+}
+
+function updateBulkValueList(){
+  var field = document.getElementById('bulkField').value;
+  var vals = [];
+  if(field==='assetType') vals=['EQUITY','GOLD','SILVER','DEBT','ETF','SGB','MUTUAL FUND'];
+  else if(field==='major') vals=[...new Set(Object.values(stocks).map(s=>s.major).filter(Boolean))];
+  else if(field==='minor') vals=[...new Set(Object.values(stocks).map(s=>s.minor).filter(Boolean))];
+  else if(field==='broker') vals=[...new Set(Object.values(stocks).map(s=>s.broker).filter(Boolean))];
+  var dl = document.getElementById('bulkValueList');
+  if(dl) dl.innerHTML=vals.map(v=>`<option value="${v}">`).join('');
+}
+
+function bulkSelectAll(checked){
+  document.querySelectorAll('.row-cb').forEach(cb=>cb.checked=checked);
+  updateBulkCount();
+}
+
+function rowCBChanged(){ updateBulkCount(); }
+
+function updateBulkCount(){
+  var n = document.querySelectorAll('.row-cb:checked').length;
+  var el=document.getElementById('bulkCount');
+  if(el) el.textContent=n+' selected';
+}
+
+async function applyBulkEdit(){
+  var field = document.getElementById('bulkField').value;
+  var val   = document.getElementById('bulkValue').value.trim();
+  if(!field){ toast('Select a field to change',true); return; }
+  if(!val)  { toast('Enter a new value',true); return; }
+  var ids = [...document.querySelectorAll('.row-cb:checked')].map(cb=>cb.value);
+  if(!ids.length){ toast('Select at least one stock',true); return; }
+  var finalVal = field==='assetType' ? val.toUpperCase() : val;
+  try{
+    var updates={};
+    ids.forEach(id=>{ updates['portfolio/stocks/'+id+'/'+field]=finalVal; });
+    await db.ref().update(updates);
+    toast(`Updated ${ids.length} stock(s) — ${field}: ${finalVal}`);
+    toggleBulkEdit();
+  } catch(e){ toast('Update failed',true); }
+}
+
+// ══════════════════════════════════════════════════════════════
+// ── PIE CHART (reusable) ──────────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+var PIE_COLORS=['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#f97316','#ec4899','#14b8a6','#a855f7'];
+function drawPie(canvasId, data){
+  // data = [{label, value, color?}]
+  var canvas=document.getElementById(canvasId);
+  if(!canvas) return;
+  var ctx=canvas.getContext('2d');
+  var W=canvas.width, H=canvas.height, cx=W/2, cy=H/2, r=Math.min(cx,cy)-12;
+  ctx.clearRect(0,0,W,H);
+  var total=data.reduce((s,d)=>s+d.value,0);
+  if(!total) return;
+  var start=-Math.PI/2;
+  data.forEach((d,i)=>{
+    var slice=(d.value/total)*2*Math.PI;
+    ctx.beginPath(); ctx.moveTo(cx,cy);
+    ctx.arc(cx,cy,r,start,start+slice);
+    ctx.closePath();
+    ctx.fillStyle=d.color||PIE_COLORS[i%PIE_COLORS.length];
+    ctx.fill();
+    ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.stroke();
+    start+=slice;
+  });
+  // No donut hole — solid pie
+}
+
+function buildLegend(containerId, data, total){
+  var el=document.getElementById(containerId); if(!el) return;
+  el.innerHTML=data.map((d,i)=>`
+    <div class="alloc-legend-item">
+      <div class="alloc-legend-dot" style="background:${d.color||PIE_COLORS[i%PIE_COLORS.length]}"></div>
+      <span style="flex:1">${d.label}</span>
+      <span style="font-weight:600">${((d.value/total)*100).toFixed(1)}%</span>
+    </div>`).join('');
+}
+
+// ══════════════════════════════════════════════════════════════
+// ── ASSET ALLOCATION PAGE ─────────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+var allocFilter='';
+function renderAllocation(){
+  var list=Object.values(stocks);
+  // Group by assetType
+  var groups={};
+  list.forEach(s=>{
+    var at=s.assetType||'UNCLASSIFIED';
+    if(!groups[at]) groups[at]={invested:0,cv:0,pnl:0,count:0,stocks:[]};
+    var c=calc(s);
+    groups[at].invested+=c.bc; groups[at].cv+=c.cv;
+    groups[at].pnl+=c.pnl; groups[at].count++;
+    groups[at].stocks.push(s);
+  });
+  var keys=Object.keys(groups).sort();
+  var total=Object.values(groups).reduce((s,g)=>s+g.cv,0);
+
+  // Pie chart
+  var pieData=keys.map((k,i)=>({label:k,value:groups[k].cv,color:PIE_COLORS[i%PIE_COLORS.length]}));
+  drawPie('allocPieCanvas',pieData);
+  buildLegend('allocLegend',pieData,total);
+
+  // Cards
+  var cardsEl=document.getElementById('allocCards');
+  cardsEl.innerHTML=keys.map((k,i)=>{
+    var g=groups[k]; var pct=g.invested>0?(g.pnl/g.invested*100):0;
+    var allocPct=total>0?(g.cv/total*100):0;
+    var pnlAbs=Math.abs(g.pnl);
+    return `<div class="alloc-card ${allocFilter===k?'active':''}" onclick="setAllocFilter('${k}')" style="border-left:4px solid ${PIE_COLORS[i%PIE_COLORS.length]}">
+      <div class="ac-name">${k} (${g.count})</div>
+      <div class="ac-val">${inrLC(g.cv)}</div>
+      <div style="font-size:10px;color:var(--text2);margin-bottom:4px">${inr(g.cv)}</div>
+      <div class="ac-pnl ${g.pnl>=0?'gain-txt':'loss-txt'}">${g.pnl>=0?'+':'-'}${inrLC(pnlAbs)} (${pct>=0?'+':''}${pct.toFixed(1)}%)</div>
+      <div class="ac-pct">${allocPct.toFixed(1)}% of portfolio</div>
+    </div>`;
+  }).join('');
+
+  // Detail table
+  var filtered=allocFilter ? list.filter(s=>(s.assetType||'UNCLASSIFIED')===allocFilter) : list;
+  document.getElementById('allocDetailTitle').textContent = allocFilter ? '📋 '+allocFilter+' Holdings' : '📋 All Holdings by Asset Type';
+  var tbody=document.getElementById('allocTbody');
+  if(!filtered.length){ tbody.innerHTML='<tr><td colspan="12" style="text-align:center;padding:24px;color:var(--text2)">No stocks found.</td></tr>'; return; }
+  tbody.innerHTML=filtered.map(s=>{
+    var c=calc(s); var dHeld=days(effectiveDate(s))||0;
+    var tax=dHeld>=366?'<span class="days-badge days-ltcg">LTCG</span>':'<span class="days-badge days-stcg">STCG</span>';
+    var pnlCls=c.pnl>=0?'gain-txt':'loss-txt';
+    return `<tr>
+      <td>${s.broker||'—'}</td>
+      <td><span class="asset-badge ${(s.assetType||'').toLowerCase().replace(' ','')}">${s.assetType||'—'}</span></td>
+      <td style="font-weight:600">${s.co}</td>
+      <td>${s.date||'—'}</td>
+      <td class="r">${s.qty}</td>
+      <td class="r">₹${fmt(s.buy)}</td>
+      <td class="r">₹${fmt(s.cmp||0)}</td>
+      <td class="r">${inr(c.bc)}</td>
+      <td class="r">${inr(c.cv)}</td>
+      <td class="r ${pnlCls}">${c.pnl>=0?'+':''}${inr(c.pnl)}</td>
+      <td class="r"><span class="badge ${c.pct>=0?'bg':'br'}">${c.pct>=0?'+':''}${c.pct.toFixed(1)}%</span></td>
+      <td>${tax}</td>
+    </tr>`;
+  }).join('');
+}
+
+function setAllocFilter(at){
+  allocFilter = allocFilter===at ? '' : at;
+  renderAllocation();
+}
+
+// ══════════════════════════════════════════════════════════════
+// ── REAL ESTATE ───────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+var reProps={}, reEditId=null;
+
+function subscribeToRE(){
+  db.ref('portfolio/realEstate').on('value', snap=>{
+    reProps=snap.val()||{};
+    if(currentPageTab==='realestate') renderRealEstate();
+  });
+}
+
+function openREModal(id){
+  reEditId=id||null;
+  var p=id?reProps[id]:{};
+  document.getElementById('reModalTitle').textContent=id?'Edit Property':'Add Property';
+  document.getElementById('re_name').value=p.name||'';
+  document.getElementById('re_type').value=p.type||'Residential Plot';
+  document.getElementById('re_date').value=p.date||'';
+  document.getElementById('re_unit').value=p.unit||'sqft';
+  document.getElementById('re_source').value=p.source||'';
+  document.getElementById('re_innetworth').value=p.inNetworth||'Yes';
+  document.getElementById('re_area').value=p.area||'';
+  document.getElementById('re_purchaserate').value=p.purchaseRate||'';
+  document.getElementById('re_landcost').value=p.landCost||'';
+  document.getElementById('re_stamp').value=p.stamp||'';
+  document.getElementById('re_regfee').value=p.regFee||'';
+  document.getElementById('re_onlinereg').value=p.onlineReg||'';
+  document.getElementById('re_docwriter').value=p.docWriter||'';
+  document.getElementById('re_docfee').value=p.docFee||'';
+  document.getElementById('re_ec').value=p.ec||'';
+  document.getElementById('re_cd').value=p.cd||'';
+  document.getElementById('re_brokerage').value=p.brokerage||'';
+  document.getElementById('re_misc').value=p.misc||'';
+  document.getElementById('re_legal').value=p.legal||'';
+  document.getElementById('re_patta').value=p.patta||'';
+  document.getElementById('re_discount').value=p.discount||'';
+  document.getElementById('re_total').value=p.totalCost||'';
+  document.getElementById('re_comments').value=p.comments||'';
+  calcRECosts();
+  document.getElementById('reModalOverlay').style.display='flex';
+}
+
+function closeREModal(){ document.getElementById('reModalOverlay').style.display='none'; }
+
+function calcRECosts(){
+  var area=parseFloat(document.getElementById('re_area').value)||0;
+  var rate=parseFloat(document.getElementById('re_purchaserate').value)||0;
+  var landCost=area*rate;
+  document.getElementById('re_landcost').value=landCost>0?landCost.toFixed(0):'';
+  var fields=['re_stamp','re_regfee','re_onlinereg','re_docwriter','re_docfee',
+              're_ec','re_cd','re_brokerage','re_misc','re_legal','re_patta'];
+  var total=landCost;
+  fields.forEach(function(fid){ total+=parseFloat(document.getElementById(fid).value)||0; });
+  var discount=parseFloat(document.getElementById('re_discount').value)||0;
+  total-=discount;
+  document.getElementById('re_total').value=total>0?total.toFixed(0):'';
+  var prev=document.getElementById('re_totalPreview');
+  if(prev) prev.textContent=inrLC(total)+' ('+inr(total)+')';
+}
+
+function g(id){ return parseFloat(document.getElementById(id).value)||0; }
+function gstr(id){ return document.getElementById(id).value||''; }
+
+async function saveRE(){
+  var name=gstr('re_name'), date=gstr('re_date');
+  if(!name||!date){ toast('Property name and date required',true); return; }
+  var area=g('re_area'), prate=g('re_purchaserate');
+  var landCost=area*prate;
+  var totalCost=g('re_total')||landCost;
+  var prop={
+    name, type:gstr('re_type'), date,
+    unit:gstr('re_unit'), source:gstr('re_source'),
+    inNetworth:gstr('re_innetworth'),
+    area, purchaseRate:prate, landCost,
+    stamp:g('re_stamp'), regFee:g('re_regfee'), onlineReg:g('re_onlinereg'),
+    docWriter:g('re_docwriter'), docFee:g('re_docfee'),
+    ec:g('re_ec'), cd:g('re_cd'), brokerage:g('re_brokerage'),
+    misc:g('re_misc'), legal:g('re_legal'), patta:g('re_patta'),
+    discount:g('re_discount'), totalCost,
+    comments:gstr('re_comments'),
+    cmp: reEditId&&reProps[reEditId]?reProps[reEditId].cmp||0:0,
+    cmpDate: reEditId&&reProps[reEditId]?reProps[reEditId].cmpDate||'':''
+  };
+  try{
+    var ref=reEditId?db.ref('portfolio/realEstate/'+reEditId):db.ref('portfolio/realEstate').push();
+    await ref.set(prop);
+    toast(reEditId?'Property updated':'Property added');
+    closeREModal();
+  } catch(ex){ toast('Save failed',true); }
+}
+
+async function deleteRE(id){
+  if(!confirm('Delete this property?')) return;
+  await db.ref('portfolio/realEstate/'+id).remove();
+  toast('Property deleted');
+}
+
+
+function reCMPBlur(el){
+  var pid=el.getAttribute('data-pid');
+  var dateEl=document.getElementById('cmpdate_'+pid);
+  saveRECMP(pid, el.value, dateEl?dateEl.value:'');
+}
+function reCMPDateChange(el){
+  var pid=el.getAttribute('data-pid');
+  var cmpEl=document.getElementById('cmp_'+pid);
+  saveRECMP(pid, cmpEl?cmpEl.value:'', el.value);
+}
+
+async function saveRECMP(id, cmp, cmpDate){
+  if(!id) return;
+  try{
+    await db.ref('portfolio/realEstate/'+id).update({cmp:parseFloat(cmp)||0, cmpDate:cmpDate||''});
+    if(reProps[id]){ reProps[id].cmp=parseFloat(cmp)||0; reProps[id].cmpDate=cmpDate||''; }
+    renderRealEstate();
+    toast('CMP saved');
+  } catch(ex){ toast('CMP save failed',true); }
+}
+
+function reCAGR(invested, currVal, purchaseDate){
+  if(!invested||!currVal||!purchaseDate) return null;
+  var years=(Date.now()-new Date(purchaseDate))/(365.25*86400000);
+  if(years<0.01) return null;
+  return (Math.pow(currVal/invested, 1/years)-1)*100;
+}
+
+function renderRealEstate(){
+  var props=Object.entries(reProps).map(function(e){ return Object.assign({},e[1],{_id:e[0]}); });
+  // Only count "In Networth = Yes" properties in summary
+  var nwProps=props.filter(function(p){ return p.inNetworth!=='No'; });
+  var totalInvested=nwProps.reduce(function(s,p){ return s+(p.totalCost||0); },0);
+  var totalCurrVal=nwProps.reduce(function(s,p){
+    var cv=p.cmp&&p.area?p.cmp*p.area:(p.totalCost||0); return s+cv;
+  },0);
+  var totalPnl=totalCurrVal-totalInvested;
+  var totalPct=totalInvested>0?(totalPnl/totalInvested*100):0;
+
+  document.getElementById('reSummary').innerHTML=
+    '<div class="scard"><div class="lbl">Properties</div><div class="val">'+props.length+'</div></div>'+
+    '<div class="scard"><div class="lbl">Total Invested</div><div class="val">'+inrLC(totalInvested)+'<div style="font-size:10px;color:var(--text2);font-weight:400">'+inr(totalInvested)+'</div></div></div>'+
+    '<div class="scard"><div class="lbl">Current Value</div><div class="val">'+inrLC(totalCurrVal)+'<div style="font-size:10px;color:var(--text2);font-weight:400">'+inr(totalCurrVal)+'</div></div></div>'+
+    '<div class="scard"><div class="lbl">Overall P&L</div><div class="val '+(totalPnl>=0?'gain-txt':'loss-txt')+'">'+(totalPnl>=0?'+':'')+inrLC(totalPnl)+'<div style="font-size:10px;font-weight:400">'+totalPct.toFixed(1)+'%</div></div></div>';
+
+  var tbody=document.getElementById('reMainTbody');
+  if(!props.length){
+    tbody.innerHTML='<tr><td colspan="9" style="text-align:center;padding:32px;color:var(--text2)">No properties yet. Click <b>+ Add Property</b> to begin.</td></tr>';
+  } else {
+    tbody.innerHTML=props.map(function(p){
+      var currVal=p.cmp&&p.area?p.cmp*p.area:(p.totalCost||0);
+      var invested=p.totalCost||0;
+      var cagr=reCAGR(invested,currVal,p.date);
+      var cagrTxt=cagr!==null?'<span class="'+(cagr>=0?'gain-txt':'loss-txt')+'" style="font-weight:700">'+(cagr>=0?'+':'')+cagr.toFixed(2)+'%</span>':'—';
+      var inNW=p.inNetworth!=='No';
+      var pid=p._id;
+      var yrs=p.date?((Date.now()-new Date(p.date))/(365.25*86400000)):0;
+      var yrsStr=yrs>0?yrs.toFixed(1)+' yrs':'—';
+      var rowStyle=inNW?'':'opacity:0.6;background:var(--bg2)';
+      return '<tr style="'+rowStyle+'">'+
+        '<td style="font-weight:600">'+p.name+'</td>'+
+        '<td class="r">'+(p.area||'—')+' '+(p.unit||'')+'</td>'+
+        '<td><span class="asset-badge">'+(p.type||'—')+'</span></td>'+
+        '<td style="font-size:12px">'+(p.date||'—')+'</td>'+
+        '<td class="r">'+inrLC(invested)+'<div style="font-size:10px;color:var(--text2)">'+inr(invested)+'</div></td>'+
+        '<td class="r"><input type="number" step="0.01" value="'+(p.cmp||'')+'" placeholder="Enter CMP" '+
+          'id="cmp_'+pid+'" data-pid="'+pid+'" '+
+          'style="width:90px;padding:4px 6px;border:1px solid var(--border);border-radius:4px;font-size:12px;text-align:right" '+
+          'onblur="reCMPBlur(this)" onkeydown="if(event.keyCode===13)this.blur()"></td>'+
+        '<td><input type="date" id="cmpdate_'+pid+'" data-pid="'+pid+'" value="'+(p.cmpDate||'')+'" '+
+          'style="padding:4px 6px;border:1px solid var(--border);border-radius:4px;font-size:11px" '+
+          'onchange="reCMPDateChange(this)"></td>'+
+        '<td class="r '+(currVal>invested?'gain-txt':'loss-txt')+'">'+inrLC(currVal)+'<div style="font-size:10px;font-weight:400">'+inr(currVal)+'</div></td>'+
+        '<td class="r">'+cagrTxt+'</td>'+
+        '<td><span class="badge '+(inNW?'bg':'br')+'">'+(inNW?'Yes':'No')+'</span></td>'+
+        '<td class="r" style="font-size:12px;font-weight:600">'+yrsStr+'</td>'+
+        '</tr>';
+    }).join('');
+  }
+
+  var pieData=props.map(function(p,i){
+    return {label:p.name, value:p.cmp&&p.area?p.cmp*p.area:(p.totalCost||0), color:PIE_COLORS[i%PIE_COLORS.length]};
+  });
+  drawPie('rePieCanvas',pieData);
+  buildLegend('reLegend',pieData,totalCurrVal||1);
+
+  document.getElementById('reGrid').innerHTML=props.map(function(p){
+    var currVal=p.cmp&&p.area?p.cmp*p.area:(p.totalCost||0);
+    var pnl=currVal-(p.totalCost||0);
+    var pct=p.totalCost>0?(pnl/p.totalCost*100):0;
+    var cagr=reCAGR(p.totalCost||0,currVal,p.date);
+    return '<div class="re-card">'+
+      '<div class="re-card-header">'+
+        '<div><div class="re-card-name">'+p.name+'</div>'+
+        '<div style="font-size:11px;color:var(--text2)">'+(p.date||'')+' &middot; '+(p.area||'—')+' '+(p.unit||'')+'</div></div>'+
+        '<div style="display:flex;gap:6px;align-items:center">'+
+          '<span class="re-card-type">'+(p.type||'Property')+'</span>'+
+          '<button class="ib re-open-btn" data-pid="'+p._id+'"><i class="ti ti-edit"></i></button>'+
+          '<button class="ib re-del-btn" data-pid="'+p._id+'" style="color:var(--red)"><i class="ti ti-trash"></i></button>'+
+        '</div></div>'+
+      '<div class="re-row"><span class="lbl">Purchase Rate</span><span class="val">'+inrLC(p.purchaseRate||0)+'/'+( p.unit||'unit')+'</span></div>'+
+      '<div class="re-row"><span class="lbl">Land/Builder Cost</span><span class="val">'+inrLC(p.landCost||0)+'</span></div>'+
+      '<div class="re-row"><span class="lbl">Stamp+Reg+Charges</span><span class="val">'+inrLC((p.stamp||0)+(p.regFee||0)+(p.onlineReg||0)+(p.docWriter||0)+(p.docFee||0)+(p.ec||0)+(p.cd||0)+(p.brokerage||0)+(p.misc||0)+(p.legal||0)+(p.patta||0))+'</span></div>'+
+      (p.discount?'<div class="re-row"><span class="lbl" style="color:var(--green)">Discount</span><span class="val" style="color:var(--green)">-'+inrLC(p.discount)+'</span></div>':'')+
+      '<div class="re-row" style="font-weight:700"><span class="lbl">Total Invested</span><span class="val">'+inrLC(p.totalCost||0)+'</span></div>'+
+      '<div class="re-return-bar">'+
+        '<div style="display:flex;justify-content:space-between;align-items:center">'+
+          '<span style="font-size:12px;font-weight:600">Current Value</span>'+
+          '<span style="font-size:16px;font-weight:700">'+inrLC(currVal)+'</span></div>'+
+        '<div class="re-vs">'+
+          '<div class="re-vs-item"><div class="rv-lbl">P&L</div><div class="rv-val '+(pnl>=0?'gain-txt':'loss-txt')+'">'+(pnl>=0?'+':'')+inrLC(pnl)+'</div></div>'+
+          '<div class="re-vs-item"><div class="rv-lbl">CAGR</div><div class="rv-val '+(cagr!==null&&cagr>=0?'gain-txt':'loss-txt')+'">'+(cagr!==null?(cagr>=0?'+':'')+cagr.toFixed(1)+'%':'—')+'</div></div>'+
+        '</div>'+
+        (p.source?'<div style="font-size:10px;color:var(--text2);margin-top:8px">Source: '+p.source+'</div>':'')+
+        (p.comments?'<div style="font-size:10px;color:var(--text2);font-style:italic;margin-top:4px">'+p.comments+'</div>':'')+
+      '</div></div>';
+  }).join('')||'<div style="padding:20px;color:var(--text2)">No properties yet.</div>';
+  // Delegate clicks on reGrid buttons
+  var grid=document.getElementById('reGrid');
+  if(grid){
+    grid.onclick=function(ev){
+      var btn=ev.target.closest('button');
+      if(!btn) return;
+      var pid=btn.getAttribute('data-pid');
+      if(btn.classList.contains('re-open-btn')) openREModal(pid);
+      if(btn.classList.contains('re-del-btn')) deleteRE(pid);
+    };
+  }
+}
+
+function importREExcel(event){
+  var file=event.target.files[0]; if(!file) return;
+  var reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      var wb=XLSX.read(e.target.result,{type:'array'});
+      var ws=wb.Sheets[wb.SheetNames[0]];
+      var rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+      var imported=0;
+      rows.forEach(function(row){
+        var name=String(row[0]||'').trim();
+        var val=parseFloat(row[1])||0;
+        if(name&&val&&!name.toLowerCase().includes('total')){
+          db.ref('portfolio/realEstate').push({name,totalCost:val,cmp:0,cmpDate:'',date:new Date().toISOString().split('T')[0],type:'Residential Plot',unit:'sqft',inNetworth:'Yes'});
+          imported++;
+        }
+      });
+      toast('Imported '+imported+' properties');
+    } catch(ex){ toast('Import failed: '+ex.message,true); }
+  };
+  reader.readAsArrayBuffer(file);
+  event.target.value='';
+}
+
+// ── MUTUAL FUNDS ──────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+var mfFunds={}, mfEditId=null;
+
+function subscribeToMF(){
+  db.ref('portfolio/mutualFunds').on('value', snap=>{
+    mfFunds=snap.val()||{};
+    if(currentPageTab==='mutualfunds') renderMutualFunds();
+  });
+}
+
+function openMFModal(id){
+  mfEditId=id||null;
+  var f=id?mfFunds[id]:{};
+  document.getElementById('mfModalTitle').textContent=id?'Edit Fund':'Add Mutual Fund';
+  document.getElementById('mf_name').value=f.name||'';
+  document.getElementById('mf_type').value=f.type||'Equity';
+  document.getElementById('mf_platform').value=f.platform||'';
+  document.getElementById('mf_folio').value=f.folio||'';
+  document.getElementById('mf_units').value=f.units||'';
+  document.getElementById('mf_buynav').value=f.buyNav||'';
+  document.getElementById('mf_currnav').value=f.currNav||'';
+  document.getElementById('mf_sip').value=f.sip||'No';
+  calcMFPreview();
+  document.getElementById('mfModalOverlay').style.display='flex';
+}
+
+function closeMFModal(){ document.getElementById('mfModalOverlay').style.display='none'; }
+
+function calcMFPreview(){
+  var units=parseFloat(document.getElementById('mf_units').value)||0;
+  var buyNav=parseFloat(document.getElementById('mf_buynav').value)||0;
+  var currNav=parseFloat(document.getElementById('mf_currnav').value)||0;
+  document.getElementById('mf_invested').value=units&&buyNav?(units*buyNav).toFixed(2):'';
+  document.getElementById('mf_currval').value=units&&currNav?(units*currNav).toFixed(2):'';
+}
+
+async function saveMF(){
+  var name=document.getElementById('mf_name').value.trim();
+  var units=parseFloat(document.getElementById('mf_units').value)||0;
+  var buyNav=parseFloat(document.getElementById('mf_buynav').value)||0;
+  if(!name||!units||!buyNav){ toast('Fund name, units and buy NAV required',true); return; }
+  var currNav=parseFloat(document.getElementById('mf_currnav').value)||0;
+  var fund={
+    name, type:document.getElementById('mf_type').value,
+    platform:document.getElementById('mf_platform').value,
+    folio:document.getElementById('mf_folio').value,
+    units, buyNav, currNav: currNav||buyNav,
+    sip:document.getElementById('mf_sip').value,
+    invested:units*buyNav,
+    currVal:units*(currNav||buyNav)
+  };
+  try{
+    var ref=mfEditId?db.ref('portfolio/mutualFunds/'+mfEditId):db.ref('portfolio/mutualFunds').push();
+    await ref.set(fund);
+    toast(mfEditId?'Fund updated':'Fund added');
+    closeMFModal();
+  } catch(e){ toast('Save failed',true); }
+}
+
+async function deleteMF(id){
+  if(!confirm('Delete this fund?')) return;
+  await db.ref('portfolio/mutualFunds/'+id).remove();
+  toast('Fund deleted');
+}
+
+function renderMutualFunds(){
+  var funds=Object.entries(mfFunds).map(([k,v])=>({...v,_id:k}));
+  var totalInvested=funds.reduce((s,f)=>s+(f.invested||0),0);
+  var totalCurrVal=funds.reduce((s,f)=>s+(f.currVal||0),0);
+  var totalPnl=totalCurrVal-totalInvested;
+  var totalPct=totalInvested>0?(totalPnl/totalInvested*100):0;
+  var sipCount=funds.filter(f=>f.sip==='Yes').length;
+
+  document.getElementById('mfSummary').innerHTML=`
+    <div class="scard"><div class="lbl">Total Funds</div><div class="val">${funds.length}</div></div>
+    <div class="scard"><div class="lbl">SIP Active</div><div class="val">${sipCount}</div></div>
+    <div class="scard"><div class="lbl">Total Invested</div><div class="val">${inr(totalInvested)}</div></div>
+    <div class="scard"><div class="lbl">Current Value</div><div class="val">${inr(totalCurrVal)}</div></div>
+    <div class="scard"><div class="lbl">Overall P&L</div><div class="val ${totalPnl>=0?'gain-txt':'loss-txt'}">${totalPnl>=0?'+':''}${inr(totalPnl)} (${totalPct.toFixed(1)}%)</div></div>`;
+
+  var tbody=document.getElementById('mfTbody');
+  if(!funds.length){
+    tbody.innerHTML='<tr><td colspan="13" style="text-align:center;padding:32px;color:var(--text2)">No mutual funds yet. Click <b>+ Add Fund</b> to begin.</td></tr>';
+    return;
+  }
+  tbody.innerHTML=funds.map(f=>{
+    var pnl=(f.currVal||0)-(f.invested||0);
+    var pct=f.invested>0?(pnl/f.invested*100):0;
+    var pnlCls=pnl>=0?'gain-txt':'loss-txt';
+    return `<tr>
+      <td style="font-weight:600">${f.name}</td>
+      <td><span class="mf-type-badge">${f.type||'—'}</span></td>
+      <td style="font-size:11px">${f.platform||'—'}</td>
+      <td style="font-size:11px;color:var(--text2)">${f.folio||'—'}</td>
+      <td class="r">${(f.units||0).toFixed(3)}</td>
+      <td class="r">₹${fmt(f.buyNav||0)}</td>
+      <td class="r">₹${fmt(f.currNav||0)}</td>
+      <td class="r">${inr(f.invested||0)}</td>
+      <td class="r">${inr(f.currVal||0)}</td>
+      <td class="r ${pnlCls}">${pnl>=0?'+':''}${inr(pnl)}</td>
+      <td class="r"><span class="badge ${pct>=0?'bg':'br'}">${pct>=0?'+':''}${pct.toFixed(1)}%</span></td>
+      <td><span class="sip-badge ${f.sip==='Yes'?'sip-yes':'sip-no'}">${f.sip||'No'}</span></td>
+      <td><div style="display:flex;gap:4px">
+        <button class="ib" onclick="openMFModal('${f._id}')"><i class="ti ti-edit"></i></button>
+        <button class="ib" onclick="deleteMF('${f._id}')" style="color:var(--red)"><i class="ti ti-trash"></i></button>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+
+// ══════════════════════════════════════════════════════════════
+// ── NETWORTH V2 ───────────────────────────────────────────────
+var nwData={manualAssets:{},loans:{},extraLoans:{}};
+
+function subscribeToNetworth(){
+  db.ref('portfolio/networth').on('value', snap=>{
+    var d=snap.val()||{};
+    nwData={
+      manualAssets: d.manualAssets||{},
+      loans: d.loans||{},
+      extraLoans: d.extraLoans||{},
+      loanDetails: d.loanDetails||{}
+    };
+    if(currentPageTab==='networth') renderNetworth();
+  });
+}
+// ══════════════════════════════════════════════════════════════
+function fmtLakhCrore(val){
+  val=Math.abs(val);
+  if(val>=10000000) return (val/10000000).toFixed(2)+' Cr';
+  if(val>=100000)   return (val/100000).toFixed(2)+' L';
+  return '₹'+fmt(val);
+}
+
+function inrLC(val){
+  var sign=val<0?'-':'';
+  return sign+'₹'+fmtLakhCrore(Math.abs(val));
+}
+
+var NW_ASSETS_DEF = [
+  {key:'realEstate',   label:'Real Estate',          auto:true,  autoSrc:'re'},
+  {key:'equity',       label:'Equity (Shares)',       auto:true,  autoSrc:'eq',   assetTypes:['EQUITY','ETF']},
+  {key:'goldDemat',    label:'Gold (Demat / SGB)',    auto:true,  autoSrc:'eq',   assetTypes:['GOLD','SGB']},
+  {key:'silverDemat',  label:'Silver (Demat)',        auto:true,  autoSrc:'eq',   assetTypes:['SILVER']},
+  {key:'debtLiquid',   label:'Debt / Liquid Fund',   auto:true,  autoSrc:'eq',   assetTypes:['DEBT']},
+  {key:'mfTotal',      label:'Mutual Funds',          auto:true,  autoSrc:'mf'},
+  {key:'goldPhysical', label:'Gold (Physical)',       auto:false},
+  {key:'silverPhysical',label:'Silver (Physical)',   auto:false},
+  {key:'pf',           label:'PF / EPF',             auto:false},
+  {key:'fd',           label:'Fixed Deposits',       auto:false},
+  {key:'others',       label:'Others',               auto:false},
+];
+
+var NW_LOANS_DEF = [
+  {key:'goldLoan',     label:'Gold Loan'},
+  {key:'homeLoan',     label:'Home Loan'},
+  {key:'personalLoan', label:'Personal Loan'},
+  {key:'otherLoans',   label:'Other Loans'},
+];
+
+function getAutoAssetVal(def){
+  if(def.autoSrc==='re'){
+    return Object.values(reProps)
+      .filter(p=>p.inNetworth!=='No')
+      .reduce((s,p)=>{ var cv=p.cmp&&p.area?p.cmp*p.area:(p.totalCost||0); return s+cv; },0);
+  }
+  if(def.autoSrc==='mf'){
+    return Object.values(mfFunds).reduce((s,f)=>s+(f.currVal||0),0);
+  }
+  if(def.autoSrc==='eq' && def.assetTypes){
+    return Object.values(stocks)
+      .filter(s=>def.assetTypes.includes(s.assetType||''))
+      .reduce((s,st)=>s+calc(st).cv,0);
+  }
+  return 0;
+}
+
+function renderNetworth(){
+  var saved=nwData.manualAssets||{};
+  var loans=nwData.loans||{};
+  var extraLoans=nwData.extraLoans||{};
+
+  // Compute auto values
+  var assetVals={};
+  NW_ASSETS_DEF.forEach(def=>{
+    assetVals[def.key]=def.auto ? getAutoAssetVal(def) : (parseFloat(saved[def.key])||0);
+  });
+
+  var totalAssets=Object.values(assetVals).reduce((s,v)=>s+v,0);
+
+  // Loans — use loanDetails if present
+  var loanDetails = nwData.loanDetails||{};
+  var loanVals={};
+  if(Object.keys(loanDetails).length>0){
+    // Use detailed loan records
+    Object.entries(loanDetails).forEach(([k,l])=>{ loanVals[k]=l.outstanding||0; });
+  } else {
+    // Fallback to simple loans
+    NW_LOANS_DEF.forEach(def=>{ loanVals[def.key]=parseFloat(loans[def.key])||0; });
+    Object.entries(extraLoans).forEach(([k,v])=>{ loanVals[k]=parseFloat(v)||0; });
+  }
   var totalLoans=Object.values(loanVals).reduce((s,v)=>s+v,0);
   var netWorth=totalAssets-totalLoans;
 
@@ -3113,6 +5038,72 @@ function renderNWSnapshots(){
   });
 }
 
+
+
+// ══════════════════════════════════════════════════════════════
+// ── LOAN DETAILS ──────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+var loanEditKey = null;
+
+function openLoanModal(key){
+  loanEditKey = key||null;
+  var loans = nwData.loanDetails||{};
+  var l = key ? loans[key] : {};
+  document.getElementById('loanModalTitle').textContent = key ? 'Edit Loan' : 'Add Loan';
+  document.getElementById('ln_name').value = l.name||'';
+  document.getElementById('ln_bank').value = l.bank||'';
+  document.getElementById('ln_type').value = l.type||'Gold Loan';
+  document.getElementById('ln_interest').value = l.interest||'';
+  document.getElementById('ln_amount').value = l.amount||'';
+  document.getElementById('ln_outstanding').value = l.outstanding||'';
+  document.getElementById('ln_startdate').value = l.startDate||'';
+  document.getElementById('ln_enddate').value = l.endDate||'';
+  document.getElementById('ln_emi').value = l.emi||'';
+  document.getElementById('ln_notes').value = l.notes||'';
+  updateLoanPreview();
+  document.getElementById('loanModalOverlay').style.display='flex';
+}
+
+function closeLoanModal(){ document.getElementById('loanModalOverlay').style.display='none'; }
+
+function updateLoanPreview(){
+  var v = parseFloat(document.getElementById('ln_outstanding').value)||0;
+  document.getElementById('loanOutstandingPreview').textContent = inrLC(v)+' ('+inr(v)+')';
+}
+
+async function saveLoanDetail(){
+  var name = document.getElementById('ln_name').value.trim();
+  var bank = document.getElementById('ln_bank').value.trim();
+  if(!name){ toast('Loan name is required',true); return; }
+  var loan = {
+    name, bank,
+    type: document.getElementById('ln_type').value,
+    interest: parseFloat(document.getElementById('ln_interest').value)||0,
+    amount: parseFloat(document.getElementById('ln_amount').value)||0,
+    outstanding: parseFloat(document.getElementById('ln_outstanding').value)||0,
+    startDate: document.getElementById('ln_startdate').value,
+    endDate: document.getElementById('ln_enddate').value,
+    emi: parseFloat(document.getElementById('ln_emi').value)||0,
+    notes: document.getElementById('ln_notes').value
+  };
+  if(!nwData.loanDetails) nwData.loanDetails={};
+  var key = loanEditKey || name.replace(/[^a-zA-Z0-9]/g,'_')+'_'+Date.now();
+  nwData.loanDetails[key] = loan;
+  try{
+    await db.ref('portfolio/networth/loanDetails').set(nwData.loanDetails);
+    toast((loanEditKey?'Loan updated':'Loan added')+' — '+inrLC(loan.outstanding)+' outstanding');
+    closeLoanModal();
+    renderNetworth();
+  } catch(e){ toast('Save failed',true); }
+}
+
+async function deleteLoanDetail(key){
+  if(!confirm('Delete this loan?')) return;
+  if(nwData.loanDetails) delete nwData.loanDetails[key];
+  await db.ref('portfolio/networth/loanDetails/'+key).remove();
+  toast('Loan deleted');
+  renderNetworth();
+}
 
 // ── BOOT ───────────────────────────────────────────────────
 (function(){
