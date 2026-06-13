@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SKVK Portfolio Tracker v18.1</title>
+<title>SKVK Portfolio Tracker v18.2</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.34.0/dist/tabler-icons.min.css">
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -410,7 +410,7 @@ tr:hover .acts{opacity:1}
     <div class="topbar-left">
       <span class="online-badge"><i class="ti ti-wifi" style="font-size:10px"></i> Live Shared</span>
     </div>
-    <h1><i class="ti ti-chart-bar" style="color:var(--blue)"></i>SKVK Portfolio Tracker <span class="version-badge">v18.1</span></h1>
+    <h1><i class="ti ti-chart-bar" style="color:var(--blue)"></i>SKVK Portfolio Tracker <span class="version-badge">v18.2</span></h1>
     <div class="topbar-right">
       <span class="hint" id="lastFetch"></span>
       <div id="fetchStatus"></div>
@@ -587,7 +587,7 @@ tr:hover .acts{opacity:1}
           <thead><tr>
             <th style="min-width:140px">Property</th>
             <th class="r" style="min-width:75px">Area</th>
-            <th style="min-width:100px">Size / Type</th>
+            <th style="min-width:100px">Size</th>
             <th style="min-width:90px">Bought Date</th>
             <th class="r" style="min-width:90px">Bought Price</th>
             <th class="r" style="min-width:110px">CMP ₹/unit <span style="font-size:9px;opacity:.7">(editable)</span></th>
@@ -703,7 +703,10 @@ tr:hover .acts{opacity:1}
     <div class="nw-grid">
       <div>
         <!-- ASSETS SECTION -->
-        <div class="nw-section-title"><i class="ti ti-trending-up" style="color:var(--green)"></i> Assets</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0">
+        <div class="nw-section-title" style="margin-bottom:0"><i class="ti ti-trending-up" style="color:var(--green)"></i> Assets</div>
+        <button class="btn" onclick="openAssetModal()" style="font-size:11px;padding:5px 10px"><i class="ti ti-plus"></i> Add Asset</button>
+      </div>
         <div id="nwAssetRows"></div>
         <div class="nw-total-row">
           <span style="font-weight:700;font-size:13px">Total Assets</span>
@@ -943,6 +946,45 @@ tr:hover .acts{opacity:1}
     </div>
   </div>
 
+
+  <!-- ═══ ASSET DETAIL MODAL ═══ -->
+  <div class="modal-overlay" id="assetModalOverlay" style="display:none" onclick="if(event.target===this)closeAssetModal()">
+    <div class="modal" style="max-width:520px">
+      <div class="modal-header">
+        <span class="modal-title" id="assetModalTitle">Add Asset</span>
+        <button class="modal-close" onclick="closeAssetModal()"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="modal-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="mf full"><label>Asset Name *</label><input id="ast_name" placeholder="e.g. SBI FD - Joint, LIC Jeevan"></div>
+          <div class="mf"><label>Category *</label>
+            <select id="ast_category">
+              <option value="Gold (Physical)">Gold (Physical)</option>
+              <option value="Silver (Physical)">Silver (Physical)</option>
+              <option value="PF / EPF">PF / EPF</option>
+              <option value="Fixed Deposits">Fixed Deposits</option>
+              <option value="Others">Others</option>
+            </select>
+          </div>
+          <div class="mf"><label>Institution / Bank</label><input id="ast_institution" placeholder="e.g. SBI, LIC, EPFO"></div>
+          <div class="mf"><label>Current Value ₹ *</label><input id="ast_amount" type="number" placeholder="0" oninput="updateAssetPreview()"></div>
+          <div class="mf"><label>Date of Entry</label><input id="ast_entrydate" type="date"></div>
+          <div class="mf"><label>Date of Maturity</label><input id="ast_maturitydate" type="date"></div>
+          <div class="mf"><label>Interest Rate % p.a.</label><input id="ast_interest" type="number" step="0.01" placeholder="e.g. 7.5"></div>
+          <div class="mf"><label>Quantity / Units</label><input id="ast_qty" placeholder="e.g. 50g gold, 100 units"></div>
+          <div class="mf full"><label>Notes</label><input id="ast_notes" placeholder="Any extra details..."></div>
+        </div>
+        <div style="margin-top:12px;padding:10px 14px;background:var(--green-lt);border-radius:var(--r);font-size:12px;color:var(--green);display:flex;justify-content:space-between">
+          <span>Value added to Networth:</span>
+          <strong id="assetValuePreview">₹0</strong>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeAssetModal()">Cancel</button>
+        <button class="btn primary" onclick="saveAssetDetail()"><i class="ti ti-device-floppy"></i> Save Asset</button>
+      </div>
+    </div>
+  </div>
 
   <!-- ═══ LOAN DETAIL MODAL ═══ -->
   <div class="modal-overlay" id="loanModalOverlay" style="display:none" onclick="if(event.target===this)closeLoanModal()">
@@ -1981,11 +2023,11 @@ function updateSummary(arr){
   });
   var pnl=tc-tb, pct=tb>0?(pnl/tb*100):0;
   var avgD = dCount>0?Math.round(totalDays/dCount):null;
-  document.getElementById('s_invested').innerHTML=inrLC(tb)+'<div style="font-size:11px;color:var(--text2);font-weight:400;margin-top:2px">'+inr(tb)+'</div>';
-  document.getElementById('s_value').innerHTML=inrLC(tc)+'<div style="font-size:11px;color:var(--text2);font-weight:400;margin-top:2px">'+inr(tc)+'</div>';
+  document.getElementById('s_invested').textContent=inrLC(tb);
+  document.getElementById('s_value').textContent=inrLC(tc);
   var pe=document.getElementById('s_pnl');
   var pnlAbs=Math.abs(pnl);
-  pe.innerHTML=(pnl>=0?'+':'-')+inrLC(pnlAbs)+'<div style="font-size:11px;font-weight:400;margin-top:2px">'+(pnl>=0?'+':'-')+inr(pnlAbs)+'</div>';
+  pe.textContent=(pnl>=0?'+':'-')+inrLC(pnlAbs);
   pe.className='val '+(pnl>=0?'pos':'neg');
   var pr=document.getElementById('s_pct');
   pr.textContent=(pnl>=0?'+':'')+pct.toFixed(1)+'%'; pr.className='val '+(pnl>=0?'pos':'neg');
@@ -2720,9 +2762,9 @@ function renderRealEstate(){
 
   document.getElementById('reSummary').innerHTML=
     '<div class="scard"><div class="lbl">Properties</div><div class="val">'+props.length+'</div></div>'+
-    '<div class="scard"><div class="lbl">Total Invested</div><div class="val">'+inrLC(totalInvested)+'<div style="font-size:10px;color:var(--text2);font-weight:400">'+inr(totalInvested)+'</div></div></div>'+
-    '<div class="scard"><div class="lbl">Current Value</div><div class="val">'+inrLC(totalCurrVal)+'<div style="font-size:10px;color:var(--text2);font-weight:400">'+inr(totalCurrVal)+'</div></div></div>'+
-    '<div class="scard"><div class="lbl">Overall P&L</div><div class="val '+(totalPnl>=0?'gain-txt':'loss-txt')+'">'+(totalPnl>=0?'+':'')+inrLC(totalPnl)+'<div style="font-size:10px;font-weight:400">'+totalPct.toFixed(1)+'%</div></div></div>';
+    '<div class="scard"><div class="lbl">Total Invested</div><div class="val">'+inrLC(totalInvested)+'</div></div>'+
+    '<div class="scard"><div class="lbl">Current Value</div><div class="val">'+inrLC(totalCurrVal)+'</div></div>'+
+    '<div class="scard"><div class="lbl">Overall P&L</div><div class="val '+(totalPnl>=0?'gain-txt':'loss-txt')+'">'+(totalPnl>=0?'+':'')+inrLC(Math.abs(totalPnl))+'<div style="font-size:11px;font-weight:400">'+totalPct.toFixed(1)+'%</div></div></div>';
 
   var tbody=document.getElementById('reMainTbody');
   if(!props.length){
@@ -2737,11 +2779,10 @@ function renderRealEstate(){
       var pid=p._id;
       var yrs=p.date?((Date.now()-new Date(p.date))/(365.25*86400000)):0;
       var yrsStr=yrs>0?yrs.toFixed(1)+' yrs':'—';
-      var rowStyle=inNW?'':'opacity:0.6;background:var(--bg2)';
-      return '<tr style="'+rowStyle+'">'+
+      return '<tr>'+
         '<td style="font-weight:600">'+p.name+'</td>'+
         '<td class="r">'+(p.area||'—')+' '+(p.unit||'')+'</td>'+
-        '<td><span class="asset-badge">'+(p.type||'—')+'</span></td>'+
+        '<td style="font-size:12px;white-space:nowrap">'+(p.area||'—')+' '+(p.unit||'')+'</td>'+
         '<td style="font-size:12px">'+(p.date||'—')+'</td>'+
         '<td class="r">'+inrLC(invested)+'<div style="font-size:10px;color:var(--text2)">'+inr(invested)+'</div></td>'+
         '<td class="r"><input type="number" step="0.01" value="'+(p.cmp||'')+'" placeholder="Enter CMP" '+
@@ -2759,11 +2800,14 @@ function renderRealEstate(){
     }).join('');
   }
 
-  var pieData=props.map(function(p,i){
+  // Only include "Yes" properties in pie chart
+  var pieProps=props.filter(function(p){ return p.inNetworth!=='No'; });
+  var pieData=pieProps.map(function(p,i){
     return {label:p.name, value:p.cmp&&p.area?p.cmp*p.area:(p.totalCost||0), color:PIE_COLORS[i%PIE_COLORS.length]};
   });
+  var pieTotal=pieData.reduce(function(s,d){ return s+d.value; },0);
   drawPie('rePieCanvas',pieData);
-  buildLegend('reLegend',pieData,totalCurrVal||1);
+  buildLegend('reLegend',pieData,pieTotal||1);
 
   document.getElementById('reGrid').innerHTML=props.map(function(p){
     var currVal=p.cmp&&p.area?p.cmp*p.area:(p.totalCost||0);
@@ -2956,7 +3000,8 @@ function subscribeToNetworth(){
       manualAssets: d.manualAssets||{},
       loans: d.loans||{},
       extraLoans: d.extraLoans||{},
-      loanDetails: d.loanDetails||{}
+      loanDetails: d.loanDetails||{},
+      assetDetails: d.assetDetails||{}
     };
     if(currentPageTab==='networth') renderNetworth();
   });
@@ -3009,6 +3054,10 @@ function getAutoAssetVal(def){
       .filter(s=>def.assetTypes.includes(s.assetType||''))
       .reduce((s,st)=>s+calc(st).cv,0);
   }
+  // Manual category — use assetDetails sum
+  if(def.label){
+    return getManualAssetVal(def.label);
+  }
   return 0;
 }
 
@@ -3053,21 +3102,58 @@ function renderNetworth(){
   document.getElementById('nwTotalLoansSub').textContent='₹'+fmt(totalLoans);
 
   // Render asset rows
-  document.getElementById('nwAssetRows').innerHTML=NW_ASSETS_DEF.map(def=>{
+  var assetDetails3=nwData.assetDetails||{};
+  document.getElementById('nwAssetRows').innerHTML=NW_ASSETS_DEF.map(function(def){
     var v=assetVals[def.key]||0;
     var pct=totalAssets>0?(v/totalAssets*100):0;
+    var subEntries=!def.auto?Object.entries(assetDetails3).filter(function(e){ return e[1].category===def.label; }):[];
     var inputField=def.auto
-      ? `<span style="font-size:11px;color:var(--text3);padding:5px 10px;font-style:italic">Auto-filled</span>`
-      : `<div class="nw-rupee-input"><span>₹</span><input type="text" value="${v||''}" placeholder="0" 
-          onchange="nwAssetChanged('${def.key}',this.value)" oninput="nwAssetChanged('${def.key}',this.value)"></div>`;
-    return `<div class="nw-cat-row-v2 ${def.auto?'auto-row':''}">
-      <div class="nw-cat-name">${def.label} ${def.auto?'<span style="font-size:9px;background:var(--blue);color:#fff;padding:1px 6px;border-radius:10px;margin-left:4px">AUTO</span>':''}</div>
-      <div class="nw-val-display"><div class="nw-val-main">${inrLC(v)}</div><div class="nw-val-sub">${pct.toFixed(1)}% of assets</div></div>
-      <div class="nw-val-display" style="min-width:80px"><div class="nw-val-sub">₹${fmt(v)}</div></div>
-      ${inputField}
-      <div></div>
-    </div>`;
+      ? '<span style="font-size:11px;color:var(--text3);padding:5px 10px;font-style:italic">Auto-filled</span>'
+      : '<button class="btn ast-add-cat" data-cat="'+def.label+'" style="font-size:10px;padding:4px 8px"><i class="ti ti-plus"></i> Add</button>';
+    var subHtml='';
+    if(subEntries.length>0){
+      subHtml='<div style="margin-top:6px;padding-left:12px;border-left:2px solid var(--border)">';
+      subEntries.forEach(function(ent){
+        var k=ent[0], a=ent[1];
+        var daysLeft=a.maturityDate?Math.ceil((new Date(a.maturityDate)-Date.now())/86400000):null;
+        var matTxt=daysLeft!==null?(daysLeft>0?daysLeft+'d to maturity':'Matured'):'';
+        subHtml+='<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:11px;border-bottom:1px solid var(--bg3)">'+
+          '<div><span style="font-weight:600">'+a.name+'</span>'+
+          (a.institution?' <span style="color:var(--text2)">· '+a.institution+'</span>':'')+
+          (a.interest?' <span style="color:var(--text2)">· '+a.interest+'%</span>':'')+
+          (matTxt?' <span style="color:var(--orange)">· '+matTxt+'</span>':'')+
+          (a.qty?' <span style="color:var(--text2)">· '+a.qty+'</span>':'')+
+          '</div>'+
+          '<div style="display:flex;align-items:center;gap:8px">'+
+            '<span style="font-weight:700;color:var(--green)">'+inrLC(a.amount||0)+'</span>'+
+            '<button class="ib ast-edit-btn" data-ak="'+k+'"><i class="ti ti-edit"></i></button>'+
+            '<button class="ib ast-del-btn" data-ak="'+k+'" style="color:var(--red)"><i class="ti ti-x"></i></button>'+
+          '</div>'+
+        '</div>';
+      });
+      subHtml+='</div>';
+    }
+    return '<div class="nw-cat-row-v2 '+(def.auto?'auto-row':'')+'" style="flex-direction:column;align-items:stretch">'+
+      '<div style="display:grid;grid-template-columns:1fr auto auto 80px;gap:12px;align-items:center">'+
+        '<div class="nw-cat-name">'+def.label+(def.auto?' <span style="font-size:9px;background:var(--blue);color:#fff;padding:1px 6px;border-radius:10px;margin-left:4px">AUTO</span>':'')+'</div>'+
+        '<div class="nw-val-display"><div class="nw-val-main">'+inrLC(v)+'</div><div class="nw-val-sub">'+pct.toFixed(1)+'% of assets'+(subEntries.length>0?' · '+subEntries.length+' item(s)':'')+'</div></div>'+
+        '<div></div>'+
+        inputField+
+      '</div>'+
+      subHtml+
+    '</div>';
   }).join('');
+  // Delegate asset row clicks
+  var assetRowsEl=document.getElementById('nwAssetRows');
+  if(assetRowsEl){
+    assetRowsEl.onclick=function(ev){
+      var btn=ev.target.closest('button');
+      if(!btn) return;
+      if(btn.classList.contains('ast-add-cat')){ openAssetModal(); document.getElementById('ast_category').value=btn.getAttribute('data-cat')||'Others'; }
+      if(btn.classList.contains('ast-edit-btn')) openAssetModal(btn.getAttribute('data-ak'));
+      if(btn.classList.contains('ast-del-btn')) deleteAssetDetail(btn.getAttribute('data-ak'));
+    };
+  }
 
   // Render loan rows
   var loanDetails2=nwData.loanDetails||{};
@@ -4600,8 +4686,7 @@ function renderRealEstate(){
       var pid=p._id;
       var yrs=p.date?((Date.now()-new Date(p.date))/(365.25*86400000)):0;
       var yrsStr=yrs>0?yrs.toFixed(1)+' yrs':'—';
-      var rowStyle=inNW?'':'opacity:0.6;background:var(--bg2)';
-      return '<tr style="'+rowStyle+'">'+
+      return '<tr>'+
         '<td style="font-weight:600">'+p.name+'</td>'+
         '<td class="r">'+(p.area||'—')+' '+(p.unit||'')+'</td>'+
         '<td><span class="asset-badge">'+(p.type||'—')+'</span></td>'+
@@ -5041,6 +5126,79 @@ function renderNWSnapshots(){
 
 
 // ══════════════════════════════════════════════════════════════
+
+// ══════════════════════════════════════════════════════════════
+// ── ASSET DETAILS ─────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+var assetEditKey = null;
+var MANUAL_ASSET_CATS = ['Gold (Physical)','Silver (Physical)','PF / EPF','Fixed Deposits','Others'];
+
+function openAssetModal(key){
+  assetEditKey = key||null;
+  var assets = nwData.assetDetails||{};
+  var a = key ? assets[key] : {};
+  document.getElementById('assetModalTitle').textContent = key ? 'Edit Asset' : 'Add Asset';
+  document.getElementById('ast_name').value = a.name||'';
+  document.getElementById('ast_category').value = a.category||'Fixed Deposits';
+  document.getElementById('ast_institution').value = a.institution||'';
+  document.getElementById('ast_amount').value = a.amount||'';
+  document.getElementById('ast_entrydate').value = a.entryDate||'';
+  document.getElementById('ast_maturitydate').value = a.maturityDate||'';
+  document.getElementById('ast_interest').value = a.interest||'';
+  document.getElementById('ast_qty').value = a.qty||'';
+  document.getElementById('ast_notes').value = a.notes||'';
+  updateAssetPreview();
+  document.getElementById('assetModalOverlay').style.display='flex';
+}
+
+function closeAssetModal(){ document.getElementById('assetModalOverlay').style.display='none'; }
+
+function updateAssetPreview(){
+  var v = parseFloat(document.getElementById('ast_amount').value)||0;
+  document.getElementById('assetValuePreview').textContent = inrLC(v)+' ('+inr(v)+')';
+}
+
+async function saveAssetDetail(){
+  var name = document.getElementById('ast_name').value.trim();
+  if(!name){ toast('Asset name is required',true); return; }
+  var asset = {
+    name,
+    category: document.getElementById('ast_category').value,
+    institution: document.getElementById('ast_institution').value,
+    amount: parseFloat(document.getElementById('ast_amount').value)||0,
+    entryDate: document.getElementById('ast_entrydate').value,
+    maturityDate: document.getElementById('ast_maturitydate').value,
+    interest: parseFloat(document.getElementById('ast_interest').value)||0,
+    qty: document.getElementById('ast_qty').value,
+    notes: document.getElementById('ast_notes').value
+  };
+  if(!nwData.assetDetails) nwData.assetDetails={};
+  var key = assetEditKey || name.replace(/[^a-zA-Z0-9]/g,'_')+'_'+Date.now();
+  nwData.assetDetails[key] = asset;
+  try{
+    await db.ref('portfolio/networth/assetDetails').set(nwData.assetDetails);
+    toast((assetEditKey?'Asset updated':'Asset added')+' — '+inrLC(asset.amount));
+    closeAssetModal();
+    renderNetworth();
+  } catch(e){ toast('Save failed',true); }
+}
+
+async function deleteAssetDetail(key){
+  if(!confirm('Delete this asset?')) return;
+  if(nwData.assetDetails) delete nwData.assetDetails[key];
+  await db.ref('portfolio/networth/assetDetails/'+key).remove();
+  toast('Asset deleted');
+  renderNetworth();
+}
+
+function getManualAssetVal(categoryKey){
+  // Sum all assetDetails entries for this category
+  var details = nwData.assetDetails||{};
+  return Object.values(details)
+    .filter(function(a){ return a.category===categoryKey; })
+    .reduce(function(s,a){ return s+(a.amount||0); },0);
+}
+
 // ── LOAN DETAILS ──────────────────────────────────────────────
 // ══════════════════════════════════════════════════════════════
 var loanEditKey = null;
