@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SKVK Portfolio Tracker v18.3</title>
+<title>SKVK Portfolio Tracker v18.4</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.34.0/dist/tabler-icons.min.css">
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -431,7 +431,7 @@ tr:hover .acts{opacity:1}
     <div class="topbar-left">
       <span class="online-badge"><i class="ti ti-wifi" style="font-size:10px"></i> Live Shared</span>
     </div>
-    <h1><i class="ti ti-chart-bar" style="color:var(--blue)"></i>SKVK Portfolio Tracker <span class="version-badge">v18.3</span></h1>
+    <h1><i class="ti ti-chart-bar" style="color:var(--blue)"></i>SKVK Portfolio Tracker <span class="version-badge">v18.4</span></h1>
     <div class="topbar-right">
       <span class="hint" id="lastFetch"></span>
       <div id="fetchStatus"></div>
@@ -3907,20 +3907,25 @@ function fmt(n,dp=2){ return Number(n).toLocaleString('en-IN',{maximumFractionDi
 
 // ── MAJOR CATEGORY FILTER TABS ─────────────────────────────
 function setMajorFilter(val){
-  activeMajor = val;
+  selectedMajors.clear();
+  if(val) selectedMajors.add(val);
   render();
 }
 
 function renderCatTabs(){
   var majors=[...new Set(Object.values(stocks).map(s=>s.major||'').filter(Boolean))].sort();
-  var tabsEl = document.getElementById('catTabs');
-  var all = `<span class="cat-tab all${activeMajor===''?' active':''}" onclick="setMajorFilter('')">All <span style="font-size:10px;opacity:.7">(${Object.keys(stocks).length})</span></span>`;
-  var tabs = majors.map(m=>{
-    var cnt = Object.values(stocks).filter(s=>(s.major||'')=== m).length;
-    var mc = majorClass(m);
-    return `<span class="cat-tab${activeMajor===m?' active':''}" style="${activeMajor===m?'':'background:var(--bg3)'}" onclick="setMajorFilter('${m}')">${m} <span style="font-size:10px;opacity:.7">(${cnt})</span></span>`;
-  }).join('');
-  tabsEl.innerHTML = all+tabs;
+  var cp = document.getElementById('catPills');
+  if(!cp) return;
+  var total = Object.keys(stocks).length;
+  var allActive = selectedMajors.size===0;
+  var html = '<span class="pills-label">Category:</span>';
+  html += '<span class="cat-pill '+(allActive?'active':'')+'" data-major="" onclick="togglePill(this)">All ('+total+')</span>';
+  majors.forEach(function(m){
+    var cnt = Object.values(stocks).filter(s=>(s.major||'')===m).length;
+    var isActive = selectedMajors.has(m);
+    html += '<span class="cat-pill '+(isActive?'multi-active':'')+'" data-major="'+m+'" onclick="togglePill(this)">'+m+' ('+cnt+')</span>';
+  });
+  cp.innerHTML = html;
 }
 
 // ── RENDER ─────────────────────────────────────────────────
