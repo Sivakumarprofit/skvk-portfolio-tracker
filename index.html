@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SKVK Portfolio Tracker v18.9</title>
+<title>SKVK Portfolio Tracker v18.10</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.34.0/dist/tabler-icons.min.css">
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -448,7 +448,7 @@ tr:hover .acts{opacity:1}
     <div class="topbar-left">
       <span class="online-badge"><i class="ti ti-wifi" style="font-size:10px"></i> Live Shared</span>
     </div>
-    <h1><i class="ti ti-chart-bar" style="color:var(--blue)"></i>SKVK Portfolio Tracker <span class="version-badge">v18.9</span></h1>
+    <h1><i class="ti ti-chart-bar" style="color:var(--blue)"></i>SKVK Portfolio Tracker <span class="version-badge">v18.10</span></h1>
     <div class="topbar-right">
       <span class="hint" id="lastFetch"></span>
       <div id="fetchStatus"></div>
@@ -3597,6 +3597,7 @@ function startApp(){
     subscribeToRE();
     subscribeToMF();
     subscribeToNetworth();
+    initMarginFirebase2();
   } catch(e){ toast('Firebase error: '+e.message, true); }
 }
 
@@ -5659,6 +5660,50 @@ function buildIndividualRow(s, isLot){
     '<td><div style="display:flex;gap:3px"></div></td>' +
     '</tr>';
 }
+
+// ══════════════════════════════════════════════════════════════
+// ── MTM CASH SETUP (ACTIVE BLOCK) ────────────────────────────
+// ══════════════════════════════════════════════════════════════
+var MARGIN_FIREBASE_CFG2 = {
+  apiKey:            "AIzaSyBLNXE6A-EJo1WS5cFJZM3B2YxqcJMJI00",
+  authDomain:        "skvk-margin-calculator.firebaseapp.com",
+  databaseURL:       "https://skvk-margin-calculator-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId:         "skvk-margin-calculator",
+  storageBucket:     "skvk-margin-calculator.firebasestorage.app",
+  messagingSenderId: "341103062702",
+  appId:             "1:341103062702:web:fadf6ca98e4b1eb2f2473f"
+};
+var marginDb2 = null;
+
+function subscribeToMTMCash2(){
+  if(!marginDb2){ console.warn('Margin DB not ready'); return; }
+  marginDb2.ref('margin/accounts_latest').on('value', function(snap){
+    var data = snap.val()||{};
+    var total = 0;
+    Object.values(data).forEach(function(acc){
+      total += parseFloat(acc.cash||0);
+    });
+    mtmCashValue = Math.max(0, total);
+    mtmCashUpdatedAt = new Date();
+    console.log('MTM Cash updated:', mtmCashValue);
+    if(currentPageTab==='networth') renderNetworth();
+  }, function(err){
+    console.warn('MTM Cash read error:', err);
+  });
+}
+
+function initMarginFirebase2(){
+  try{
+    var existing = firebase.apps.find(function(a){ return a.name==='marginApp2'; });
+    var app2 = existing || firebase.initializeApp(MARGIN_FIREBASE_CFG2, 'marginApp2');
+    marginDb2 = firebase.database(app2);
+    subscribeToMTMCash2();
+    console.log('Margin Firebase connected ✓');
+  } catch(e){
+    console.warn('Margin Firebase init failed:', e);
+  }
+}
+
 // ── BOOT ───────────────────────────────────────────────────
 (function(){
   // Already authenticated on this device?
