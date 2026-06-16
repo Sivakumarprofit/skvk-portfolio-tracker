@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SKVK Portfolio Tracker v18.4</title>
+<title>SKVK Portfolio Tracker v18.6</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.34.0/dist/tabler-icons.min.css">
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -379,6 +379,8 @@ tr:hover .acts{opacity:1}
 .cmp-warn{display:inline-block;font-size:14px;margin-left:5px;cursor:help;animation:pulse-warn 2s infinite}
 @keyframes pulse-warn{0%,100%{opacity:1}50%{opacity:.5}}
 .cmp-warn-tip{color:var(--orange);font-size:10px;font-weight:600}
+.inline-cmp-input{width:90px;padding:3px 6px;border:1px solid var(--orange);border-radius:4px;font-size:11px;text-align:right;outline:none;background:var(--bg);color:var(--text);margin-left:4px}
+.inline-cmp-input:focus{border-color:var(--blue);box-shadow:0 0 0 2px rgba(59,130,246,.2)}
 
 /* ── MULTI-SELECT PILLS ── */
 .cat-pills{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;align-items:center}
@@ -431,7 +433,7 @@ tr:hover .acts{opacity:1}
     <div class="topbar-left">
       <span class="online-badge"><i class="ti ti-wifi" style="font-size:10px"></i> Live Shared</span>
     </div>
-    <h1><i class="ti ti-chart-bar" style="color:var(--blue)"></i>SKVK Portfolio Tracker <span class="version-badge">v18.4</span></h1>
+    <h1><i class="ti ti-chart-bar" style="color:var(--blue)"></i>SKVK Portfolio Tracker <span class="version-badge">v18.6</span></h1>
     <div class="topbar-right">
       <span class="hint" id="lastFetch"></span>
       <div id="fetchStatus"></div>
@@ -486,6 +488,8 @@ tr:hover .acts{opacity:1}
       <option value="val_d">Value High→Low</option>
       <option value="date_a">Oldest first</option>
       <option value="co_a">Company A→Z</option>
+      <option value="ipct_d">Init P&L% High→Low</option>
+      <option value="ipct_a">Init P&L% Low→High</option>
     </select>
     <button class="btn" id="bulkToggleBtn" onclick="toggleBulkEdit()" style="display:inline-flex"><i class="ti ti-checkboxes"></i> Bulk Edit</button>
   </div>
@@ -2017,6 +2021,8 @@ function render(){
   else if(so==='val_d') arr.sort((a,b)=>calc(b).cv-calc(a).cv);
   else if(so==='date_a') arr.sort((a,b)=>new Date(a.date)-new Date(b.date));
   else if(so==='co_a') arr.sort((a,b)=>a.co.localeCompare(b.co));
+  else if(so==='ipct_d') arr.sort((a,b)=>calc(b).pct-calc(a).pct);
+  else if(so==='ipct_a') arr.sort((a,b)=>calc(a).pct-calc(b).pct);
 
   updateSummary(arr);
   updateFilters();
@@ -2048,7 +2054,14 @@ function render(){
       <td><span class="asset-badge ${(s.assetType||'').toLowerCase().replace(' ','')}">${s.assetType||'—'}</span></td>
       <td><span class="tag ${majorClass(s.major)}" style="white-space:nowrap">${s.major||'—'}</span></td>
       <td><span class="minor-tag" title="${s.minor||''}">${s.minor||'—'}</span></td>
-      <td class="bold">${s.co}${caBadge}</td>
+      <td class="bold">${s.co}${caBadge}${(()=>{
+        var hasCmp = s.cmp && s.cmp > 0;
+        var cmpEqualsBuy = s.cmp && s.buy && (Math.abs(s.cmp - s.buy) / s.buy) < 0.0001;
+        if(!hasCmp) return '<span class="cmp-warn" title="CMP not available — click Live NSE Prices to update">⚠️</span>';
+        if(cmpEqualsBuy) return '<span class="cmp-warn" title="CMP not updated — equals buy price. Edit below">⚠️ <input type="number" step="0.01" placeholder="Enter CMP" class="inline-cmp-input" data-sid="'+s._id+'" onclick="event.stopPropagation()" onblur="saveInlineCMP(this)" onkeydown="if(event.keyCode===13)this.blur()"></span>';
+        if(!s.live) return '<span class="cmp-warn" title="Manual price — not from live NSE feed">🔸 <input type="number" step="0.01" placeholder="Update CMP" class="inline-cmp-input" data-sid="'+s._id+'" onclick="event.stopPropagation()" onblur="saveInlineCMP(this)" onkeydown="if(event.keyCode===13)this.blur()"></span>';
+        return '';
+      })()}</td>
       <td style="font-size:11px"><div class="date-cell"><span class="date-main">${fmtDate(s.date)}</span></div></td>
       <td style="font-size:11px"><div class="date-cell">
         ${s.repDate
@@ -2686,9 +2699,10 @@ function renderAllocation(){
       <td><span class="asset-badge ${(s.assetType||'').toLowerCase().replace(' ','')}">${s.assetType||'—'}</span></td>
       <td style="font-weight:600">${s.co}${(()=>{
         var hasCmp = s.cmp && s.cmp > 0;
-        var isStale = !s.live && s.cmp && Math.abs(s.cmp - s.buy) < 0.001;
+        // CMP equals buy price = never updated (use % check for large numbers like SGBs)
+        var cmpEqualsBuy = s.cmp && s.buy && (Math.abs(s.cmp - s.buy) / s.buy) < 0.0001;
         if(!hasCmp) return '<span class="cmp-warn" title="CMP not available — click Live NSE Prices to update">⚠️</span>';
-        if(isStale) return '<span class="cmp-warn" title="CMP may be stale — same as buy price, not live updated">🔸</span>';
+        if(cmpEqualsBuy) return '<span class="cmp-warn" title="CMP not updated — equals buy price. Click Live NSE Prices or update manually">⚠️</span>';
         if(!s.live) return '<span class="cmp-warn" title="Manual price — not from live NSE feed">🔸</span>';
         return '';
       })()}</td>
@@ -3957,6 +3971,8 @@ function render(){
   else if(so==='val_d') arr.sort((a,b)=>calc(b).cv-calc(a).cv);
   else if(so==='date_a') arr.sort((a,b)=>new Date(a.date)-new Date(b.date));
   else if(so==='co_a') arr.sort((a,b)=>a.co.localeCompare(b.co));
+  else if(so==='ipct_d') arr.sort((a,b)=>calc(b).pct-calc(a).pct);
+  else if(so==='ipct_a') arr.sort((a,b)=>calc(a).pct-calc(b).pct);
 
   updateSummary(arr);
   updateFilters();
@@ -3988,7 +4004,14 @@ function render(){
       <td><span class="asset-badge ${(s.assetType||'').toLowerCase().replace(' ','')}">${s.assetType||'—'}</span></td>
       <td><span class="tag ${majorClass(s.major)}" style="white-space:nowrap">${s.major||'—'}</span></td>
       <td><span class="minor-tag" title="${s.minor||''}">${s.minor||'—'}</span></td>
-      <td class="bold">${s.co}${caBadge}</td>
+      <td class="bold">${s.co}${caBadge}${(()=>{
+        var hasCmp = s.cmp && s.cmp > 0;
+        var cmpEqualsBuy = s.cmp && s.buy && (Math.abs(s.cmp - s.buy) / s.buy) < 0.0001;
+        if(!hasCmp) return '<span class="cmp-warn" title="CMP not available — click Live NSE Prices to update">⚠️</span>';
+        if(cmpEqualsBuy) return '<span class="cmp-warn" title="CMP not updated — equals buy price. Edit below">⚠️ <input type="number" step="0.01" placeholder="Enter CMP" class="inline-cmp-input" data-sid="'+s._id+'" onclick="event.stopPropagation()" onblur="saveInlineCMP(this)" onkeydown="if(event.keyCode===13)this.blur()"></span>';
+        if(!s.live) return '<span class="cmp-warn" title="Manual price — not from live NSE feed">🔸 <input type="number" step="0.01" placeholder="Update CMP" class="inline-cmp-input" data-sid="'+s._id+'" onclick="event.stopPropagation()" onblur="saveInlineCMP(this)" onkeydown="if(event.keyCode===13)this.blur()"></span>';
+        return '';
+      })()}</td>
       <td style="font-size:11px"><div class="date-cell"><span class="date-main">${fmtDate(s.date)}</span></div></td>
       <td style="font-size:11px"><div class="date-cell">
         ${s.repDate
@@ -4048,7 +4071,7 @@ function updateSummary(arr){
   document.getElementById('s_value').innerHTML=inrLC(tc)+'<div style="font-size:11px;color:var(--text2);font-weight:400;margin-top:2px">'+inr(tc)+'</div>';
   var pe=document.getElementById('s_pnl');
   var pnlAbs=Math.abs(pnl);
-  pe.innerHTML=(pnl>=0?'+':'-')+inrLC(pnlAbs)+'<div style="font-size:11px;font-weight:400;margin-top:2px">'+(pnl>=0?'+':'-')+inr(pnlAbs)+'</div>';
+  pe.textContent=(pnl>=0?'+':'-')+inrLC(pnlAbs);
   pe.className='val '+(pnl>=0?'pos':'neg');
   var pr=document.getElementById('s_pct');
   pr.textContent=(pnl>=0?'+':'')+pct.toFixed(1)+'%'; pr.className='val '+(pnl>=0?'pos':'neg');
@@ -4626,9 +4649,10 @@ function renderAllocation(){
       <td><span class="asset-badge ${(s.assetType||'').toLowerCase().replace(' ','')}">${s.assetType||'—'}</span></td>
       <td style="font-weight:600">${s.co}${(()=>{
         var hasCmp = s.cmp && s.cmp > 0;
-        var isStale = !s.live && s.cmp && Math.abs(s.cmp - s.buy) < 0.001;
+        // CMP equals buy price = never updated (use % check for large numbers like SGBs)
+        var cmpEqualsBuy = s.cmp && s.buy && (Math.abs(s.cmp - s.buy) / s.buy) < 0.0001;
         if(!hasCmp) return '<span class="cmp-warn" title="CMP not available — click Live NSE Prices to update">⚠️</span>';
-        if(isStale) return '<span class="cmp-warn" title="CMP may be stale — same as buy price, not live updated">🔸</span>';
+        if(cmpEqualsBuy) return '<span class="cmp-warn" title="CMP not updated — equals buy price. Click Live NSE Prices or update manually">⚠️</span>';
         if(!s.live) return '<span class="cmp-warn" title="Manual price — not from live NSE feed">🔸</span>';
         return '';
       })()}</td>
@@ -5399,6 +5423,41 @@ function subscribeToMTMCash(){
   });
 }
 
+
+function cyclePnlSort(){
+  var so = document.getElementById('fSort');
+  var icon = document.getElementById('pnlSortIcon');
+  if(!so) return;
+  if(so.value === 'ipct_d'){
+    so.value = 'ipct_a';
+    if(icon) icon.textContent = '↑';
+  } else if(so.value === 'ipct_a'){
+    so.value = '';
+    if(icon) icon.textContent = '⇅';
+  } else {
+    so.value = 'ipct_d';
+    if(icon) icon.textContent = '↓';
+  }
+  render();
+}
+
+// ── INLINE CMP SAVE ───────────────────────────────────────────
+async function saveInlineCMP(input){
+  var sid = input.getAttribute('data-sid');
+  var val = parseFloat(input.value);
+  if(!sid || !val || val <= 0){ input.value=''; return; }
+  var s = stocks[sid];
+  if(!s) return;
+  try{
+    await db.ref('portfolio/stocks/'+sid).update({
+      cmp: val,
+      live: false,
+      priceAt: Date.now()
+    });
+    input.value = '';
+    toast(s.co+' CMP updated to ₹'+fmt(val)+' ✓');
+  } catch(e){ toast('CMP save failed: '+e.message, true); }
+}
 // ── BOOT ───────────────────────────────────────────────────
 (function(){
   // Already authenticated on this device?
