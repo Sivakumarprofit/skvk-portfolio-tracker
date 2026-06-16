@@ -3152,6 +3152,7 @@ var NW_ASSETS_DEF = [
   {key:'debtLiquid',   label:'Debt / Liquid Fund',   auto:true,  autoSrc:'eq',   assetTypes:['DEBT']},
   {key:'mfTotal',      label:'Mutual Funds',          auto:true,  autoSrc:'mf'},
   {key:'mtmCash',      label:'MTM Cash (Trading)',    auto:true,  autoSrc:'mtm'},
+  {key:'mtmCash',      label:'MTM Cash (Trading)',    auto:true,  autoSrc:'mtm'},
   {key:'goldPhysical', label:'Gold (Physical)',       auto:false},
   {key:'silverPhysical',label:'Silver (Physical)',   auto:false},
   {key:'pf',           label:'PF / EPF',             auto:false},
@@ -5107,12 +5108,18 @@ var NW_ASSETS_DEF = [
   {key:'silverDemat',  label:'Silver (Demat)',        auto:true,  autoSrc:'eq',   assetTypes:['SILVER']},
   {key:'debtLiquid',   label:'Debt / Liquid Fund',   auto:true,  autoSrc:'eq',   assetTypes:['DEBT']},
   {key:'mfTotal',      label:'Mutual Funds',          auto:true,  autoSrc:'mf'},
+  {key:'mtmCash',      label:'MTM Cash (Trading)',    auto:true,  autoSrc:'mtm'},
+  {key:'mtmCash',      label:'MTM Cash (Trading)',    auto:true,  autoSrc:'mtm'},
   {key:'goldPhysical', label:'Gold (Physical)',       auto:false},
   {key:'silverPhysical',label:'Silver (Physical)',   auto:false},
   {key:'pf',           label:'PF / EPF',             auto:false},
   {key:'fd',           label:'Fixed Deposits',       auto:false},
   {key:'others',       label:'Others',               auto:false},
 ];
+
+// MTM Cash value (from Margin Firebase)
+var mtmCashValue = mtmCashValue || 0;
+var mtmCashUpdatedAt = mtmCashUpdatedAt || null;
 
 var NW_LOANS_DEF = [
   {key:'goldLoan',     label:'Gold Loan'},
@@ -5129,6 +5136,9 @@ function getAutoAssetVal(def){
   }
   if(def.autoSrc==='mf'){
     return Object.values(mfFunds).reduce((s,f)=>s+(f.currVal||0),0);
+  }
+  if(def.autoSrc==='mtm'){
+    return Math.max(0, mtmCashValue);
   }
   if(def.autoSrc==='eq' && def.assetTypes){
     return Object.values(stocks)
