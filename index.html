@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SKVK Portfolio Tracker v19.3</title>
+<title>SKVK Portfolio Tracker v19.5</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.34.0/dist/tabler-icons.min.css">
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -327,7 +327,7 @@ tr:hover .acts{opacity:1}
 .nw-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
 .nw-total{font-size:28px;font-weight:800;color:var(--text)}
 .nw-date{font-size:12px;color:var(--text2)}
-.nw-grid{display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:start}
+.nw-grid{display:grid;grid-template-columns:300px 1fr;gap:20px;align-items:start}
 .nw-categories{display:flex;flex-direction:column;gap:10px}
 .nw-cat-row{background:var(--bg);border:1px solid var(--border);border-radius:var(--rlg);padding:14px 16px;display:grid;grid-template-columns:1fr auto auto 80px;gap:12px;align-items:center}
 .nw-cat-row:hover{background:var(--bg2)}
@@ -448,7 +448,7 @@ tr:hover .acts{opacity:1}
     <div class="topbar-left">
       <span class="online-badge"><i class="ti ti-wifi" style="font-size:10px"></i> Live Shared</span>
     </div>
-    <h1><i class="ti ti-chart-bar" style="color:var(--blue)"></i>SKVK Portfolio Tracker <span class="version-badge">v19.3</span></h1>
+    <h1><i class="ti ti-chart-bar" style="color:var(--blue)"></i>SKVK Portfolio Tracker <span class="version-badge">v19.5</span></h1>
     <div class="topbar-right">
       <span class="hint" id="lastFetch"></span>
       <div id="fetchStatus"></div>
@@ -791,12 +791,22 @@ tr:hover .acts{opacity:1}
       <button class="btn primary" onclick="saveNetworth()"><i class="ti ti-device-floppy"></i> Save Snapshot</button>
     </div>
     <div class="nw-grid">
+      <!-- LEFT: Pie Chart -->
+      <div>
+        <div class="nw-chart-wrap" style="margin-bottom:16px;position:sticky;top:80px">
+          <h3 style="font-size:14px;font-weight:700;margin-bottom:16px;text-align:center">Networth Breakdown</h3>
+          <canvas id="nwPieCanvas" width="260" height="260"></canvas>
+          <div class="alloc-legend" id="nwLegend" style="margin-top:14px"></div>
+        </div>
+      </div>
+
+      <!-- RIGHT: Assets, Loans, Net Worth -->
       <div>
         <!-- ASSETS SECTION -->
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0">
-        <div class="nw-section-title" style="margin-bottom:0"><i class="ti ti-trending-up" style="color:var(--green)"></i> Assets</div>
-        <button class="btn" onclick="openAssetModal()" style="font-size:11px;padding:5px 10px"><i class="ti ti-plus"></i> Add Asset</button>
-      </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div class="nw-section-title" style="margin-bottom:0"><i class="ti ti-trending-up" style="color:var(--green)"></i> Assets</div>
+          <button class="btn" onclick="openAssetModal()" style="font-size:11px;padding:5px 10px"><i class="ti ti-plus"></i> Add Asset</button>
+        </div>
         <div id="nwAssetRows"></div>
         <div class="nw-total-row">
           <span style="font-weight:700;font-size:13px">Total Assets</span>
@@ -804,7 +814,7 @@ tr:hover .acts{opacity:1}
         </div>
 
         <!-- LOANS SECTION -->
-        <div class="nw-section-title" style="margin-top:24px"><i class="ti ti-trending-down" style="color:var(--red)"></i> Loans & Liabilities</div>
+        <div class="nw-section-title" style="margin-top:24px"><i class="ti ti-trending-down" style="color:var(--red)"></i> Loans &amp; Liabilities</div>
         <div id="nwLoanRows"></div>
         <div class="nw-add-row" style="margin-bottom:8px">
           <button class="btn primary" onclick="openLoanModal()" style="width:100%"><i class="ti ti-plus"></i> Add Loan with Details</button>
@@ -819,16 +829,9 @@ tr:hover .acts{opacity:1}
           <div><div class="lbl">Net Worth (Assets − Loans)</div><div class="val" id="nwGrandTotal">₹0</div><div style="font-size:10px;opacity:.7;margin-top:2px" id="nwGrandSub"></div></div>
           <div style="text-align:right"><div style="font-size:11px;opacity:.7">As of</div><div style="font-size:13px;font-weight:700" id="nwDateSmall"></div></div>
         </div>
-      </div>
 
-      <!-- RIGHT: Chart + Snapshots -->
-      <div>
-        <div class="nw-chart-wrap" style="margin-bottom:16px">
-          <h3 style="font-size:14px;font-weight:700;margin-bottom:16px;text-align:center">Networth Breakdown</h3>
-          <canvas id="nwPieCanvas" width="260" height="260"></canvas>
-          <div class="alloc-legend" id="nwLegend" style="margin-top:14px"></div>
-        </div>
-        <div class="nw-chart-wrap">
+        <!-- SNAPSHOT HISTORY — bottom -->
+        <div class="nw-chart-wrap" style="margin-top:24px">
           <h3 style="font-size:14px;font-weight:700;margin-bottom:12px">📸 Snapshot History</h3>
           <div id="nwSnapshots" style="max-height:280px;overflow-y:auto">
             <div style="text-align:center;padding:20px;color:var(--text2);font-size:12px">No snapshots yet.<br>Click "Save Snapshot" to record today&apos;s networth.</div>
@@ -938,6 +941,16 @@ tr:hover .acts{opacity:1}
       <button class="btn primary" onclick="saveNetworth()"><i class="ti ti-device-floppy"></i> Save Snapshot</button>
     </div>
     <div class="nw-grid">
+      <!-- LEFT: Pie Chart -->
+      <div>
+        <div class="nw-chart-wrap" style="margin-bottom:16px;position:sticky;top:80px">
+          <h3 style="font-size:14px;font-weight:700;margin-bottom:16px;text-align:center">Networth Breakdown</h3>
+          <canvas id="nwPieCanvas" width="260" height="260"></canvas>
+          <div class="alloc-legend" id="nwLegend" style="margin-top:14px"></div>
+        </div>
+      </div>
+
+      <!-- RIGHT: Assets, Loans, Net Worth -->
       <div>
         <!-- ASSETS SECTION -->
         <div class="nw-section-title"><i class="ti ti-trending-up" style="color:var(--green)"></i> Assets</div>
@@ -948,7 +961,7 @@ tr:hover .acts{opacity:1}
         </div>
 
         <!-- LOANS SECTION -->
-        <div class="nw-section-title" style="margin-top:24px"><i class="ti ti-trending-down" style="color:var(--red)"></i> Loans & Liabilities</div>
+        <div class="nw-section-title" style="margin-top:24px"><i class="ti ti-trending-down" style="color:var(--red)"></i> Loans &amp; Liabilities</div>
         <div id="nwLoanRows"></div>
         <div class="nw-add-row" style="margin-bottom:8px">
           <input id="nwNewLoan" placeholder="New loan name (e.g. Car Loan)..." style="flex:1;padding:8px 12px;border:1px solid var(--border);border-radius:var(--r);font-size:13px;outline:none">
@@ -964,16 +977,9 @@ tr:hover .acts{opacity:1}
           <div><div class="lbl">Net Worth (Assets − Loans)</div><div class="val" id="nwGrandTotal">₹0</div><div style="font-size:10px;opacity:.7;margin-top:2px" id="nwGrandSub"></div></div>
           <div style="text-align:right"><div style="font-size:11px;opacity:.7">As of</div><div style="font-size:13px;font-weight:700" id="nwDateSmall"></div></div>
         </div>
-      </div>
 
-      <!-- RIGHT: Chart + Snapshots -->
-      <div>
-        <div class="nw-chart-wrap" style="margin-bottom:16px">
-          <h3 style="font-size:14px;font-weight:700;margin-bottom:16px;text-align:center">Networth Breakdown</h3>
-          <canvas id="nwPieCanvas" width="260" height="260"></canvas>
-          <div class="alloc-legend" id="nwLegend" style="margin-top:14px"></div>
-        </div>
-        <div class="nw-chart-wrap">
+        <!-- SNAPSHOT HISTORY — bottom -->
+        <div class="nw-chart-wrap" style="margin-top:24px">
           <h3 style="font-size:14px;font-weight:700;margin-bottom:12px">📸 Snapshot History</h3>
           <div id="nwSnapshots" style="max-height:280px;overflow-y:auto">
             <div style="text-align:center;padding:20px;color:var(--text2);font-size:12px">No snapshots yet.<br>Click "Save Snapshot" to record today&apos;s networth.</div>
@@ -3318,6 +3324,22 @@ var NW_LOANS_DEF = [
   {key:'otherLoans',   label:'Other Loans'},
 ];
 
+
+// Networth pie color map
+var NW_COLOR_MAP={
+  'realEstate':   '#0ea5e9',   // sky blue
+  'equity':       '#1a56db',   // EQUITY blue
+  'goldDemat':    '#d4a017',   // GOLD
+  'silverDemat':  '#a8a9ad',   // SILVER
+  'debtLiquid':   '#84cc16',   // DEBT lemon green
+  'mfTotal':      '#6366f1',   // purple
+  'mtmCash':      '#22c55e',   // green
+  'goldPhysical': '#b8860b',   // dark gold
+  'silverPhysical':'#94a3b8',  // slate silver
+  'pf':           '#0369a1',   // deep blue
+  'fd':           '#0284c7',   // medium blue
+  'others':       '#6b7280',   // gray
+};
 function getAutoAssetVal(def){
   if(def.autoSrc==='re'){
     return Object.values(reProps)
@@ -3416,11 +3438,11 @@ function renderNetworth(){
       });
       subHtml+='</div>';
     }
-    return '<div class="nw-cat-row-v2 '+(def.auto?'auto-row':'')+'" style="flex-direction:column;align-items:stretch">'+
-      '<div style="display:grid;grid-template-columns:1fr auto auto 80px;gap:12px;align-items:center">'+
-        '<div class="nw-cat-name">'+def.label+(def.auto?' <span style="font-size:9px;background:var(--blue);color:#fff;padding:1px 6px;border-radius:10px;margin-left:4px">AUTO</span>':'')+'</div>'+
-        '<div class="nw-val-display"><div class="nw-val-main">'+inrLC(v)+'</div><div class="nw-val-sub">'+pct.toFixed(1)+'% of assets'+(subEntries.length>0?' · '+subEntries.length+' item(s)':'')+'</div></div>'+
-        '<div></div>'+
+    var leftColor=NW_COLOR_MAP[def.key]||'#6b7280';
+    return '<div class="nw-cat-row-v2 '+(def.auto?'auto-row':'')+'" style="border-left:3px solid '+leftColor+';flex-direction:column;align-items:stretch">'+
+      '<div style="display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:center">'+
+        '<div class="nw-cat-name" style="color:'+leftColor+'">'+def.label+(def.auto?' <span style="font-size:9px;background:'+leftColor+';color:#fff;padding:1px 6px;border-radius:10px;margin-left:4px">AUTO</span>':'')+'</div>'+
+        '<div class="nw-val-display"><div class="nw-val-main">'+inrLC(v)+'</div><div class="nw-val-sub">'+pct.toFixed(1)+'% of assets</div></div>'+
         inputField+
       '</div>'+
       subHtml+
@@ -3480,7 +3502,18 @@ function renderNetworth(){
       if(btn.classList.contains('lnedit-btn')) openLoanModal(lk);
       if(btn.classList.contains('lndel-btn')) deleteLoanDetail(lk);
     };
-  }}
+  }
+
+  // Pie chart — real-world colors
+  var pieData=NW_ASSETS_DEF.filter(function(d){ return assetVals[d.key]>0; }).map(function(d){
+    return {label:d.label, value:assetVals[d.key], color:NW_COLOR_MAP[d.key]||'#6b7280'};
+  });
+  drawPie('nwPieCanvas',pieData);
+  buildLegend('nwLegend',pieData,totalAssets||1);
+
+  // Snapshots
+  renderNWSnapshots();
+}
 
 // ── CORPORATE ACTIONS — CHAIN-SAFE ────────────────────────
 // Always stores original purchase qty/buy and recomputes the
@@ -5375,6 +5408,22 @@ var NW_LOANS_DEF = [
   {key:'otherLoans',   label:'Other Loans'},
 ];
 
+
+// Networth pie color map
+var NW_COLOR_MAP={
+  'realEstate':   '#0ea5e9',   // sky blue
+  'equity':       '#1a56db',   // EQUITY blue
+  'goldDemat':    '#d4a017',   // GOLD
+  'silverDemat':  '#a8a9ad',   // SILVER
+  'debtLiquid':   '#84cc16',   // DEBT lemon green
+  'mfTotal':      '#6366f1',   // purple
+  'mtmCash':      '#22c55e',   // green
+  'goldPhysical': '#b8860b',   // dark gold
+  'silverPhysical':'#94a3b8',  // slate silver
+  'pf':           '#0369a1',   // deep blue
+  'fd':           '#0284c7',   // medium blue
+  'others':       '#6b7280',   // gray
+};
 function getAutoAssetVal(def){
   if(def.autoSrc==='re'){
     return Object.values(reProps)
@@ -5443,12 +5492,11 @@ function renderNetworth(){
       ? `<span style="font-size:11px;color:var(--text3);padding:5px 10px;font-style:italic">Auto-filled</span>`
       : `<div class="nw-rupee-input"><span>₹</span><input type="text" value="${v||''}" placeholder="0" 
           onchange="nwAssetChanged('${def.key}',this.value)" oninput="nwAssetChanged('${def.key}',this.value)"></div>`;
-    return `<div class="nw-cat-row-v2 ${def.auto?'auto-row':''}">
-      <div class="nw-cat-name">${def.label} ${def.auto?'<span style="font-size:9px;background:var(--blue);color:#fff;padding:1px 6px;border-radius:10px;margin-left:4px">AUTO</span>':''}</div>
+    var leftColor=NW_COLOR_MAP[def.key]||'#6b7280';
+    return `<div class="nw-cat-row-v2 ${def.auto?'auto-row':''}" style="border-left:3px solid ${leftColor}">
+      <div class="nw-cat-name" style="color:${leftColor}">${def.label} ${def.auto?`<span style="font-size:9px;background:${leftColor};color:#fff;padding:1px 6px;border-radius:10px;margin-left:4px">AUTO</span>`:''}</div>
       <div class="nw-val-display"><div class="nw-val-main">${inrLC(v)}</div><div class="nw-val-sub">${pct.toFixed(1)}% of assets</div></div>
-      <div class="nw-val-display" style="min-width:80px"><div class="nw-val-sub">₹${fmt(v)}</div></div>
       ${inputField}
-      <div></div>
     </div>`;
   }).join('');
 
@@ -5468,9 +5516,9 @@ function renderNetworth(){
     </div>`;
   }).join('');
 
-  // Pie chart (assets only, non-zero)
-  var pieData=NW_ASSETS_DEF.filter(d=>assetVals[d.key]>0).map((d,i)=>({
-    label:d.label, value:assetVals[d.key], color:PIE_COLORS[i%PIE_COLORS.length]
+  // Pie chart (assets only, non-zero) — real-world colors
+  var pieData=NW_ASSETS_DEF.filter(d=>assetVals[d.key]>0).map(d=>({
+    label:d.label, value:assetVals[d.key], color:NW_COLOR_MAP[d.key]||'#6b7280'
   }));
   drawPie('nwPieCanvas',pieData);
   buildLegend('nwLegend',pieData,totalAssets||1);
