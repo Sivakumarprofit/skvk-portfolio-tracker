@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SKVK Portfolio Tracker v19.9</title>
+<title>SKVK Portfolio Tracker v20.0</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.34.0/dist/tabler-icons.min.css">
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
@@ -458,7 +458,7 @@ tr:hover .acts{opacity:1}
     <div class="topbar-left">
       <span class="online-badge"><i class="ti ti-wifi" style="font-size:10px"></i> Live Shared</span>
     </div>
-    <h1><i class="ti ti-chart-bar" style="color:var(--blue)"></i>SKVK Portfolio Tracker <span class="version-badge">v19.9</span></h1>
+    <h1><i class="ti ti-chart-bar" style="color:var(--blue)"></i>SKVK Portfolio Tracker <span class="version-badge">v20.0</span></h1>
     <div class="topbar-right">
       <span class="hint" id="lastFetch"></span>
       <div id="fetchStatus"></div>
@@ -1711,12 +1711,19 @@ var PERMANENT_ADMIN = 'sivakumar.profit@gmail.com';
 var ALLOWED_EMAILS  = [ PERMANENT_ADMIN ]; // runtime list, topped up from Firebase
 
 function loadAllowedEmails(callback){
-  firebase.database().ref('allowed_emails').once('value').then(function(snap){
-    var data = snap.val() || {};
-    var fromDB = Object.values(data).filter(Boolean);
-    ALLOWED_EMAILS = [PERMANENT_ADMIN, ...fromDB.filter(e => e !== PERMANENT_ADMIN)];
+  // If db not ready yet, just use the hardcoded list
+  if(!firebase.apps.length || !firebase.auth().currentUser){
     if(callback) callback();
-  }).catch(function(){ if(callback) callback(); });
+    return;
+  }
+  try {
+    firebase.database().ref('allowed_emails').once('value').then(function(snap){
+      var data = snap.val() || {};
+      var fromDB = Object.values(data).filter(Boolean);
+      ALLOWED_EMAILS = [PERMANENT_ADMIN, ...fromDB.filter(e => e !== PERMANENT_ADMIN)];
+      if(callback) callback();
+    }).catch(function(){ if(callback) callback(); });
+  } catch(e){ if(callback) callback(); }
 }
 
 function isEmailAllowed(email){
@@ -6155,43 +6162,55 @@ function initMarginFirebase2(){
   document.getElementById('loginScreen').style.display = 'block';
   document.getElementById('app').style.display = 'none';
 
-  // Handle redirect result first (user returning after Google redirect)
+  function showAccessDenied(email){
+    var errEl = document.getElementById('loginError');
+    if(errEl){ errEl.textContent = '⛔ Access denied for ' + email + '. Contact admin.'; errEl.style.display = 'block'; }
+    var btn = document.getElementById('googleSignInBtn');
+    if(btn) btn.style.display = 'flex';
+    var sp = document.getElementById('loginSpinner');
+    if(sp) sp.style.display = 'none';
+  }
+
+  function grantAccess(user){
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    var emailEl = document.getElementById('loggedInEmail');
+    if(emailEl) emailEl.textContent = user.email;
+    startApp();
+  }
+
+  // Handle redirect result (user returning after Google sign-in redirect)
   firebase.auth().getRedirectResult().then(function(result){
-    if(result && result.user){
-      var email = result.user.email;
-      loadAllowedEmails(function(){
-        if(!isEmailAllowed(email)){
-          firebase.auth().signOut();
-          var errEl = document.getElementById('loginError');
-          if(errEl){ errEl.textContent = '⛔ Access denied for ' + email + '. Contact admin.'; errEl.style.display = 'block'; }
-          var btn = document.getElementById('googleSignInBtn');
-          if(btn) btn.style.display = 'flex';
-          var sp = document.getElementById('loginSpinner');
-          if(sp) sp.style.display = 'none';
-        }
-        // If allowed, onAuthStateChanged will fire and let them in
-      });
-    }
+    // result is handled by onAuthStateChanged below
   }).catch(function(err){
     var errEl = document.getElementById('loginError');
     if(errEl){ errEl.textContent = '⚠️ Sign-in error: ' + err.message; errEl.style.display = 'block'; }
   });
 
-  // Auth state listener — fires on every load
+  // Auth state listener
   firebase.auth().onAuthStateChanged(function(user){
     if(user){
-      loadAllowedEmails(function(){
-        if(isEmailAllowed(user.email)){
-          document.getElementById('loginScreen').style.display = 'none';
-          document.getElementById('app').style.display = 'block';
-          var emailEl = document.getElementById('loggedInEmail');
-          if(emailEl) emailEl.textContent = user.email;
-          startApp();
+      var email = user.email;
+      // Step 1: always allow permanent admin immediately
+      if(email === PERMANENT_ADMIN){
+        grantAccess(user);
+        return;
+      }
+      // Step 2: for others, check Firebase allowed_emails list
+      firebase.database().ref('allowed_emails').once('value').then(function(snap){
+        var data = snap.val() || {};
+        var allowed = Object.values(data).some(function(e){ return e === email; });
+        if(allowed){
+          ALLOWED_EMAILS = [PERMANENT_ADMIN, ...Object.values(data).filter(Boolean)];
+          grantAccess(user);
         } else {
           firebase.auth().signOut();
-          var errEl = document.getElementById('loginError');
-          if(errEl){ errEl.textContent = '⛔ Access denied for ' + user.email; errEl.style.display = 'block'; }
+          showAccessDenied(email);
         }
+      }).catch(function(){
+        // Firebase read failed — only allow permanent admin
+        firebase.auth().signOut();
+        showAccessDenied(email);
       });
     } else {
       document.getElementById('loginScreen').style.display = 'block';
