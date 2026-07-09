@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SKVK Portfolio Tracker v20.9</title>
+<title>SKVK Portfolio Tracker v21.0</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.34.0/dist/tabler-icons.min.css">
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
@@ -335,8 +335,13 @@ tr:hover .acts{opacity:1}
 .re-note-cat-header:hover{background:var(--bg3)}
 .re-note-cat-body{padding:10px 12px;border-top:1px solid var(--border)}
 .re-note-cat-body textarea{width:100%;min-height:140px;padding:10px;border-radius:var(--r);border:1px solid var(--border2);background:var(--bg);color:var(--text);font-size:12px;font-family:inherit;resize:vertical;line-height:1.5}
-.re-note-add-row{display:flex;gap:8px;margin-top:10px}
-.re-note-add-row input{flex:1;height:36px;padding:0 10px;border-radius:var(--r);border:1px solid var(--border2);background:var(--bg);color:var(--text);font-size:13px}
+.re-note-add-row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.re-note-add-row input{flex:1;min-width:180px;height:36px;padding:0 10px;border-radius:var(--r);border:1px solid var(--border2);background:var(--bg);color:var(--text);font-size:13px}
+.re-note-import-btn{display:flex;align-items:center;gap:6px;padding:0 14px;height:36px;border:1px solid var(--border2);border-radius:var(--r);background:none;cursor:pointer;color:var(--text2);font-size:12px;font-weight:600;white-space:nowrap}
+.re-note-import-btn:hover{border-color:var(--blue);color:var(--blue);background:var(--bg2)}
+.re-note-cat-body table{border-collapse:collapse;font-size:11px;width:100%}
+.re-note-cat-body table td,.re-note-cat-body table th{border:1px solid var(--border);padding:4px 7px;color:var(--text)}
+.re-note-imported-tag{font-size:10px;color:var(--text2);margin-top:6px}
 
 /* ── NETWORTH PAGE ── */
 .nw-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
@@ -470,7 +475,7 @@ tr:hover .acts{opacity:1}
     <div class="topbar-left">
       <span class="online-badge"><i class="ti ti-wifi" style="font-size:10px"></i> Live Shared</span>
     </div>
-    <h1><i class="ti ti-chart-bar" style="color:var(--blue)"></i>SKVK Portfolio Tracker <span class="version-badge">v20.9</span></h1>
+    <h1><i class="ti ti-chart-bar" style="color:var(--blue)"></i>SKVK Portfolio Tracker <span class="version-badge">v21.0</span></h1>
     <div class="topbar-right">
       <span class="hint" id="lastFetch"></span>
       <div id="fetchStatus"></div>
@@ -701,8 +706,8 @@ tr:hover .acts{opacity:1}
             <th style="min-width:140px">Property</th>
             <th class="r" style="min-width:75px">Area</th>
             <th style="min-width:100px">Size</th>
-            <th style="min-width:90px">Bought Date</th>
-            <th class="r" style="min-width:90px">Bought Price</th>
+            <th style="min-width:90px">Purchase Date</th>
+            <th class="r" style="min-width:90px">Purchase Price</th>
             <th class="r" style="min-width:110px">CMP ₹/unit <span style="font-size:9px;opacity:.7">(editable)</span></th>
             <th style="min-width:95px">CMP Date <span style="font-size:9px;opacity:.7">(editable)</span></th>
             <th class="r" style="min-width:100px">Current Value ₹</th>
@@ -982,9 +987,13 @@ tr:hover .acts{opacity:1}
         <div style="font-size:11px;color:var(--text2);margin-bottom:12px">Reference only — these notes are never used in any calculation. Paste detailed expense breakdowns per category below.</div>
         <div id="reNotesList"></div>
         <div class="re-note-add-row">
-          <input id="reNoteNewCat" placeholder="New category name, e.g. Construction Expenses" onkeydown="if(event.keyCode===13)addRENoteCategory()">
-          <button class="btn primary" onclick="addRENoteCategory()"><i class="ti ti-plus"></i> Add</button>
+          <input id="reNoteNewCat" placeholder="Category name, e.g. Construction Expenses" onkeydown="if(event.keyCode===13)addRENoteCategory()">
+          <button class="btn primary" onclick="addRENoteCategory()"><i class="ti ti-plus"></i> Add Blank</button>
+          <label class="re-note-import-btn"><i class="ti ti-file-spreadsheet"></i> Import Excel
+            <input type="file" accept=".xlsx,.xls" style="display:none" onchange="importRENoteExcel(event)">
+          </label>
         </div>
+        <div style="font-size:10px;color:var(--text2);margin-top:6px">Type a category name above, then either click <b>Add Blank</b> to paste text yourself, or <b>Import Excel</b> to bring in a spreadsheet's rows as a structured table.</div>
       </div>
       <div class="modal-footer">
         <button class="btn" onclick="closeRENotesModal()">Close</button>
@@ -2818,6 +2827,7 @@ var COLLATERAL_COLOR_MAP={
 };
 var ASSET_BUCKETS={'EQUITY':'EQUITY','ETF':'EQUITY','GOLD':'GOLD','SGB':'GOLD','SILVER':'SILVER','DEBT':'DEBT','MUTUAL FUND':'DEBT'};
 var BUCKET_COLORS={'EQUITY':'#1a56db','GOLD':'#d4a017','SILVER':'#a8a9ad','DEBT':'#84cc16'};
+var PIE_COLORS=['#1a56db','#d4a017','#1a7a3c','#c0392b','#8b5cf6','#f97316','#0891b2','#db2777','#65a30d','#78716c','#4f46e5','#ea580c'];
 
 function drawPie(canvasId, data){
   var canvas=document.getElementById(canvasId);
@@ -3150,15 +3160,20 @@ function renderRENotesList(){
   wrap.innerHTML=keys.map(function(k){
     var c=notes[k]||{};
     var open=!!reNotesExpanded[k];
+    var bodyHtml;
+    if(c.isTable){
+      bodyHtml='<div style="overflow-x:auto">'+(c.html||'')+'</div>'+
+        '<div class="re-note-imported-tag"><i class="ti ti-file-spreadsheet" style="font-size:10px"></i> Imported from Excel. Delete this category and import again to update it.</div>';
+    } else {
+      bodyHtml='<textarea id="notetext_'+k+'" placeholder="Paste expense details here..." onblur="saveRENoteText(\''+k+'\',this.value)">'+(c.text||'')+'</textarea>';
+    }
     return '<div class="re-note-cat">'+
       '<div class="re-note-cat-header" onclick="toggleRENoteCat(\''+k+'\')">'+
         '<i class="ti ti-chevron-'+(open?'down':'right')+'" style="font-size:14px"></i>'+
-        '<span style="flex:1;font-weight:600;font-size:13px">'+(c.label||'Untitled')+'</span>'+
+        '<span style="flex:1;font-weight:600;font-size:13px">'+(c.label||'Untitled')+(c.isTable?' <span style="font-size:9px;font-weight:600;color:var(--text2)">(table)</span>':'')+'</span>'+
         '<button class="ib del" onclick="event.stopPropagation();deleteRENoteCat(\''+k+'\')" title="Delete category"><i class="ti ti-trash"></i></button>'+
       '</div>'+
-      (open?('<div class="re-note-cat-body">'+
-        '<textarea id="notetext_'+k+'" placeholder="Paste expense details here..." onblur="saveRENoteText(\''+k+'\',this.value)">'+(c.text||'')+'</textarea>'+
-      '</div>'):'')+
+      (open?('<div class="re-note-cat-body">'+bodyHtml+'</div>'):'')+
     '</div>';
   }).join('');
 }
@@ -3184,6 +3199,34 @@ async function addRENoteCategory(){
     renderRENotesList();
     toast('Category added');
   } catch(ex){ toast('Failed to add category',true); }
+}
+
+async function importRENoteExcel(event){
+  var fileInput=event.target;
+  var file=fileInput.files[0]; if(!file) return;
+  var input=document.getElementById('reNoteNewCat');
+  var label=input.value.trim();
+  if(!label){ toast('Type a category name first, then choose the Excel file',true); fileInput.value=''; return; }
+  if(!reNotesPid){ fileInput.value=''; return; }
+  var reader=new FileReader();
+  reader.onload=async function(e){
+    try{
+      var wb=XLSX.read(e.target.result,{type:'array'});
+      var ws=wb.Sheets[wb.SheetNames[0]];
+      var key='cat_'+Date.now();
+      var html=XLSX.utils.sheet_to_html(ws,{header:'',footer:'',id:'rn'+key});
+      await db.ref('portfolio/realEstate/'+reNotesPid+'/expenseNotes/'+key).set({label:label,text:'',html:html,isTable:true});
+      if(!reProps[reNotesPid]) reProps[reNotesPid]={};
+      if(!reProps[reNotesPid].expenseNotes) reProps[reNotesPid].expenseNotes={};
+      reProps[reNotesPid].expenseNotes[key]={label:label,text:'',html:html,isTable:true};
+      reNotesExpanded[key]=true;
+      input.value='';
+      renderRENotesList();
+      toast('Imported from Excel');
+    } catch(ex){ toast('Import failed: '+ex.message,true); }
+  };
+  reader.readAsArrayBuffer(file);
+  fileInput.value='';
 }
 
 async function saveRENoteText(k,text){
@@ -3280,7 +3323,7 @@ function renderRealEstate(){
       '<td class="r">'+(p.area||'—')+' '+(p.unit||'')+'</td>'+
       '<td style="font-size:12px;white-space:nowrap">'+(p.area||'—')+' '+(p.unit||'')+'</td>'+
       '<td style="font-size:12px">'+(p.date||'—')+'</td>'+
-      '<td class="r">'+inrLC(invested)+'<div style="font-size:10px;color:var(--text2)">'+inr(invested)+'</div></td>'+
+      '<td class="r" style="color:var(--blue);font-weight:700">'+inrLC(invested)+'<div style="font-size:10px;color:var(--blue);font-weight:400">'+inr(invested)+'</div></td>'+
       '<td class="r"><input type="number" step="0.01" value="'+(p.cmp||'')+'" placeholder="Enter CMP" '+
         'id="cmp_'+pid+'" data-pid="'+pid+'" '+(isArchived?'disabled ':'')+
         'style="width:90px;padding:4px 6px;border:1px solid var(--border);border-radius:4px;font-size:12px;text-align:right" '+
@@ -3291,7 +3334,7 @@ function renderRealEstate(){
       '<td class="r '+(currVal>invested?'gain-txt':'loss-txt')+'">'+inrLC(currVal)+'<div style="font-size:10px;font-weight:400">'+inr(currVal)+'</div></td>'+
       '<td class="r">'+cagrTxt+'</td>'+
       '<td><span class="badge '+(inNW?'bg':'br')+'">'+(inNW?'Yes':'No')+'</span></td>'+
-      '<td class="r" style="font-size:12px;font-weight:600">'+yrsStr+'</td>'+
+      '<td class="r" style="font-size:12px;font-weight:700;color:var(--blue)">'+yrsStr+'</td>'+
       '<td><div style="display:flex;gap:4px;flex-wrap:wrap">'+actionBtns+'</div></td>'+
       '</tr>';
   }
@@ -5012,6 +5055,7 @@ var COLLATERAL_COLOR_MAP={
 };
 var ASSET_BUCKETS={'EQUITY':'EQUITY','ETF':'EQUITY','GOLD':'GOLD','SGB':'GOLD','SILVER':'SILVER','DEBT':'DEBT','MUTUAL FUND':'DEBT'};
 var BUCKET_COLORS={'EQUITY':'#1a56db','GOLD':'#d4a017','SILVER':'#a8a9ad','DEBT':'#84cc16'};
+var PIE_COLORS=['#1a56db','#d4a017','#1a7a3c','#c0392b','#8b5cf6','#f97316','#0891b2','#db2777','#65a30d','#78716c','#4f46e5','#ea580c'];
 
 function drawPie(canvasId, data){
   var canvas=document.getElementById(canvasId);
@@ -5345,15 +5389,20 @@ function renderRENotesList(){
   wrap.innerHTML=keys.map(function(k){
     var c=notes[k]||{};
     var open=!!reNotesExpanded[k];
+    var bodyHtml;
+    if(c.isTable){
+      bodyHtml='<div style="overflow-x:auto">'+(c.html||'')+'</div>'+
+        '<div class="re-note-imported-tag"><i class="ti ti-file-spreadsheet" style="font-size:10px"></i> Imported from Excel. Delete this category and import again to update it.</div>';
+    } else {
+      bodyHtml='<textarea id="notetext_'+k+'" placeholder="Paste expense details here..." onblur="saveRENoteText(\''+k+'\',this.value)">'+(c.text||'')+'</textarea>';
+    }
     return '<div class="re-note-cat">'+
       '<div class="re-note-cat-header" onclick="toggleRENoteCat(\''+k+'\')">'+
         '<i class="ti ti-chevron-'+(open?'down':'right')+'" style="font-size:14px"></i>'+
-        '<span style="flex:1;font-weight:600;font-size:13px">'+(c.label||'Untitled')+'</span>'+
+        '<span style="flex:1;font-weight:600;font-size:13px">'+(c.label||'Untitled')+(c.isTable?' <span style="font-size:9px;font-weight:600;color:var(--text2)">(table)</span>':'')+'</span>'+
         '<button class="ib del" onclick="event.stopPropagation();deleteRENoteCat(\''+k+'\')" title="Delete category"><i class="ti ti-trash"></i></button>'+
       '</div>'+
-      (open?('<div class="re-note-cat-body">'+
-        '<textarea id="notetext_'+k+'" placeholder="Paste expense details here..." onblur="saveRENoteText(\''+k+'\',this.value)">'+(c.text||'')+'</textarea>'+
-      '</div>'):'')+
+      (open?('<div class="re-note-cat-body">'+bodyHtml+'</div>'):'')+
     '</div>';
   }).join('');
 }
@@ -5379,6 +5428,34 @@ async function addRENoteCategory(){
     renderRENotesList();
     toast('Category added');
   } catch(ex){ toast('Failed to add category',true); }
+}
+
+async function importRENoteExcel(event){
+  var fileInput=event.target;
+  var file=fileInput.files[0]; if(!file) return;
+  var input=document.getElementById('reNoteNewCat');
+  var label=input.value.trim();
+  if(!label){ toast('Type a category name first, then choose the Excel file',true); fileInput.value=''; return; }
+  if(!reNotesPid){ fileInput.value=''; return; }
+  var reader=new FileReader();
+  reader.onload=async function(e){
+    try{
+      var wb=XLSX.read(e.target.result,{type:'array'});
+      var ws=wb.Sheets[wb.SheetNames[0]];
+      var key='cat_'+Date.now();
+      var html=XLSX.utils.sheet_to_html(ws,{header:'',footer:'',id:'rn'+key});
+      await db.ref('portfolio/realEstate/'+reNotesPid+'/expenseNotes/'+key).set({label:label,text:'',html:html,isTable:true});
+      if(!reProps[reNotesPid]) reProps[reNotesPid]={};
+      if(!reProps[reNotesPid].expenseNotes) reProps[reNotesPid].expenseNotes={};
+      reProps[reNotesPid].expenseNotes[key]={label:label,text:'',html:html,isTable:true};
+      reNotesExpanded[key]=true;
+      input.value='';
+      renderRENotesList();
+      toast('Imported from Excel');
+    } catch(ex){ toast('Import failed: '+ex.message,true); }
+  };
+  reader.readAsArrayBuffer(file);
+  fileInput.value='';
 }
 
 async function saveRENoteText(k,text){
@@ -5475,7 +5552,7 @@ function renderRealEstate(){
       '<td class="r">'+(p.area||'—')+' '+(p.unit||'')+'</td>'+
       '<td style="font-size:12px;white-space:nowrap">'+(p.area||'—')+' '+(p.unit||'')+'</td>'+
       '<td style="font-size:12px">'+(p.date||'—')+'</td>'+
-      '<td class="r">'+inrLC(invested)+'<div style="font-size:10px;color:var(--text2)">'+inr(invested)+'</div></td>'+
+      '<td class="r" style="color:var(--blue);font-weight:700">'+inrLC(invested)+'<div style="font-size:10px;color:var(--blue);font-weight:400">'+inr(invested)+'</div></td>'+
       '<td class="r"><input type="number" step="0.01" value="'+(p.cmp||'')+'" placeholder="Enter CMP" '+
         'id="cmp_'+pid+'" data-pid="'+pid+'" '+(isArchived?'disabled ':'')+
         'style="width:90px;padding:4px 6px;border:1px solid var(--border);border-radius:4px;font-size:12px;text-align:right" '+
@@ -5486,7 +5563,7 @@ function renderRealEstate(){
       '<td class="r '+(currVal>invested?'gain-txt':'loss-txt')+'">'+inrLC(currVal)+'<div style="font-size:10px;font-weight:400">'+inr(currVal)+'</div></td>'+
       '<td class="r">'+cagrTxt+'</td>'+
       '<td><span class="badge '+(inNW?'bg':'br')+'">'+(inNW?'Yes':'No')+'</span></td>'+
-      '<td class="r" style="font-size:12px;font-weight:600">'+yrsStr+'</td>'+
+      '<td class="r" style="font-size:12px;font-weight:700;color:var(--blue)">'+yrsStr+'</td>'+
       '<td><div style="display:flex;gap:4px;flex-wrap:wrap">'+actionBtns+'</div></td>'+
       '</tr>';
   }
