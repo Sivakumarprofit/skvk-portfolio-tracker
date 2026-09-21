@@ -475,7 +475,7 @@ tr:hover .acts{opacity:1}
     <div class="topbar-left">
       <span class="online-badge"><i class="ti ti-wifi" style="font-size:10px"></i> Live Shared</span>
     </div>
-    <h1><i class="ti ti-chart-bar" style="color:var(--blue)"></i>SKVK Portfolio Tracker <span class="version-badge">v22.1</span></h1>
+    <h1><i class="ti ti-chart-bar" style="color:var(--blue)"></i>SKVK Portfolio Tracker <span class="version-badge">v22.2</span></h1>
     <div class="topbar-right">
       <span class="hint" id="lastFetch"></span>
       <div id="fetchStatus"></div>
@@ -764,7 +764,7 @@ tr:hover .acts{opacity:1}
             <th style="min-width:60px">Purity</th>
             <th class="r" style="min-width:80px">Weight</th>
             <th class="r" style="min-width:100px">Purchase Rate ₹/g</th>
-            <th class="r" style="min-width:120px">Making + GST</th>
+            <th class="r" style="min-width:150px">Making + Wastage + GST</th>
             <th class="r" style="min-width:110px">Total Invested</th>
             <th class="r" style="min-width:95px">Current Rate ₹/g <span style="font-size:9px;opacity:.7">(editable, global)</span></th>
             <th class="r" style="min-width:110px">Current Value</th>
@@ -1080,6 +1080,7 @@ tr:hover .acts{opacity:1}
           <div class="mf"><label>Weight (g) *</label><input id="gold_weight" type="number" step="0.001" placeholder="0.000" oninput="calcGoldCost()"></div>
           <div class="mf"><label>Purchase Rate ₹/gram *</label><input id="gold_rate" type="number" step="0.01" placeholder="0.00" oninput="calcGoldCost()"></div>
           <div class="mf"><label>Making Charges ₹</label><input id="gold_making" type="number" step="0.01" placeholder="0" oninput="calcGoldCost()"></div>
+          <div class="mf"><label>Wastage %</label><input id="gold_wastage" type="number" step="0.01" min="0" max="50" placeholder="0" oninput="calcGoldCost()"></div>
           <div class="mf"><label>GST % (on making)</label><input id="gold_gst" type="number" step="0.01" placeholder="3" oninput="calcGoldCost()"></div>
           <div class="mf"><label>Total Invested ₹</label><input id="gold_total" type="number" placeholder="Auto-calculated" style="background:var(--bg2);font-weight:700" readonly></div>
           <div class="mf"><label>Storage Location</label>
@@ -3587,6 +3588,7 @@ function openGoldModal(id){
   document.getElementById('gold_weight').value=it.weight||'';
   document.getElementById('gold_rate').value=it.purchaseRate||'';
   document.getElementById('gold_making').value=it.making||'';
+  document.getElementById('gold_wastage').value=(it.wastagePct!==undefined&&it.wastagePct!==null)?it.wastagePct:0;
   document.getElementById('gold_gst').value=(it.gstPct!==undefined&&it.gstPct!==null)?it.gstPct:3;
   document.getElementById('gold_storage').value=it.storage||'Bank locker';
   document.getElementById('gold_innetworth').value=it.inNetworth||'Yes';
@@ -3600,10 +3602,12 @@ function calcGoldCost(){
   var weight=parseFloat(document.getElementById('gold_weight').value)||0;
   var rate=parseFloat(document.getElementById('gold_rate').value)||0;
   var making=parseFloat(document.getElementById('gold_making').value)||0;
+  var wastagePct=parseFloat(document.getElementById('gold_wastage').value)||0;
   var gstPct=parseFloat(document.getElementById('gold_gst').value)||0;
   var base=weight*rate;
+  var wastageAmt=base*(wastagePct/100);
   var gstAmt=making*(gstPct/100);
-  var total=base+making+gstAmt;
+  var total=base+wastageAmt+making+gstAmt;
   document.getElementById('gold_total').value=total>0?total.toFixed(0):'';
   var prev=document.getElementById('gold_totalPreview');
   if(prev) prev.textContent=inrLC(total)+' ('+inr(total)+')';
@@ -3616,13 +3620,14 @@ async function saveGold(){
   var weight=parseFloat(document.getElementById('gold_weight').value)||0;
   var rate=parseFloat(document.getElementById('gold_rate').value)||0;
   var making=parseFloat(document.getElementById('gold_making').value)||0;
+  var wastagePct=parseFloat(document.getElementById('gold_wastage').value)||0;
   var gstPct=parseFloat(document.getElementById('gold_gst').value)||0;
-  var total=parseFloat(document.getElementById('gold_total').value)||(weight*rate+making+making*gstPct/100);
+  var total=parseFloat(document.getElementById('gold_total').value)||(weight*rate+weight*rate*wastagePct/100+making+making*gstPct/100);
   var item={
     name: name, date: date,
     shop: (document.getElementById('gold_shop').value||'').trim(),
     purity: document.getElementById('gold_purity').value,
-    weight: weight, purchaseRate: rate, making: making, gstPct: gstPct,
+    weight: weight, purchaseRate: rate, making: making, wastagePct: wastagePct, gstPct: gstPct,
     totalInvested: total,
     storage: document.getElementById('gold_storage').value,
     inNetworth: document.getElementById('gold_innetworth').value,
@@ -3748,7 +3753,7 @@ function renderGold(){
       '<td><span class="badge">'+(it.purity||'22K')+'</span></td>'+
       '<td class="r">'+(it.weight||0).toFixed(1)+' g</td>'+
       '<td class="r">'+inrLC(it.purchaseRate||0)+'</td>'+
-      '<td class="r" style="font-size:11px">'+inrLC(it.making||0)+(it.gstPct?' <span style="color:var(--text2)">(+'+it.gstPct+'% GST)</span>':'')+'</td>'+
+      '<td class="r" style="font-size:11px">'+inrLC(it.making||0)+(it.wastagePct?' <span style="color:var(--amber)">(+'+it.wastagePct+'% wastage)</span>':'')+(it.gstPct?' <span style="color:var(--text2)">(+'+it.gstPct+'% GST)</span>':'')+'</td>'+
       '<td class="r" style="color:var(--blue);font-weight:700">'+inrLC(invested)+'</td>'+
       '<td class="r">'+inrLC(rate24k)+'</td>'+
       '<td class="r '+(cv>invested?'gain-txt':'loss-txt')+'">'+inrLC(cv)+'</td>'+
@@ -3800,6 +3805,7 @@ function renderGold(){
         '</div></div>'+
       '<div class="re-row"><span class="lbl">Purchase Shop</span><span class="val">'+(it.shop||'—')+'</span></div>'+
       '<div class="re-row"><span class="lbl">Purchase Rate</span><span class="val">'+inrLC(it.purchaseRate||0)+'/g</span></div>'+
+      '<div class="re-row"><span class="lbl">Wastage</span><span class="val">'+(it.wastagePct||0)+'% ('+inrLC((it.weight||0)*(it.purchaseRate||0)*(it.wastagePct||0)/100)+')</span></div>'+
       '<div class="re-row"><span class="lbl">Making + GST</span><span class="val">'+inrLC((it.making||0)+(it.making||0)*(it.gstPct||0)/100)+'</span></div>'+
       '<div class="re-row" style="font-weight:700"><span class="lbl">Total Invested</span><span class="val">'+inrLC(it.totalInvested||0)+'</span></div>'+
       '<div class="re-return-bar">'+
@@ -6100,6 +6106,7 @@ function openGoldModal(id){
   document.getElementById('gold_weight').value=it.weight||'';
   document.getElementById('gold_rate').value=it.purchaseRate||'';
   document.getElementById('gold_making').value=it.making||'';
+  document.getElementById('gold_wastage').value=(it.wastagePct!==undefined&&it.wastagePct!==null)?it.wastagePct:0;
   document.getElementById('gold_gst').value=(it.gstPct!==undefined&&it.gstPct!==null)?it.gstPct:3;
   document.getElementById('gold_storage').value=it.storage||'Bank locker';
   document.getElementById('gold_innetworth').value=it.inNetworth||'Yes';
@@ -6113,10 +6120,12 @@ function calcGoldCost(){
   var weight=parseFloat(document.getElementById('gold_weight').value)||0;
   var rate=parseFloat(document.getElementById('gold_rate').value)||0;
   var making=parseFloat(document.getElementById('gold_making').value)||0;
+  var wastagePct=parseFloat(document.getElementById('gold_wastage').value)||0;
   var gstPct=parseFloat(document.getElementById('gold_gst').value)||0;
   var base=weight*rate;
+  var wastageAmt=base*(wastagePct/100);
   var gstAmt=making*(gstPct/100);
-  var total=base+making+gstAmt;
+  var total=base+wastageAmt+making+gstAmt;
   document.getElementById('gold_total').value=total>0?total.toFixed(0):'';
   var prev=document.getElementById('gold_totalPreview');
   if(prev) prev.textContent=inrLC(total)+' ('+inr(total)+')';
@@ -6129,13 +6138,14 @@ async function saveGold(){
   var weight=parseFloat(document.getElementById('gold_weight').value)||0;
   var rate=parseFloat(document.getElementById('gold_rate').value)||0;
   var making=parseFloat(document.getElementById('gold_making').value)||0;
+  var wastagePct=parseFloat(document.getElementById('gold_wastage').value)||0;
   var gstPct=parseFloat(document.getElementById('gold_gst').value)||0;
-  var total=parseFloat(document.getElementById('gold_total').value)||(weight*rate+making+making*gstPct/100);
+  var total=parseFloat(document.getElementById('gold_total').value)||(weight*rate+weight*rate*wastagePct/100+making+making*gstPct/100);
   var item={
     name: name, date: date,
     shop: (document.getElementById('gold_shop').value||'').trim(),
     purity: document.getElementById('gold_purity').value,
-    weight: weight, purchaseRate: rate, making: making, gstPct: gstPct,
+    weight: weight, purchaseRate: rate, making: making, wastagePct: wastagePct, gstPct: gstPct,
     totalInvested: total,
     storage: document.getElementById('gold_storage').value,
     inNetworth: document.getElementById('gold_innetworth').value,
@@ -6261,7 +6271,7 @@ function renderGold(){
       '<td><span class="badge">'+(it.purity||'22K')+'</span></td>'+
       '<td class="r">'+(it.weight||0).toFixed(1)+' g</td>'+
       '<td class="r">'+inrLC(it.purchaseRate||0)+'</td>'+
-      '<td class="r" style="font-size:11px">'+inrLC(it.making||0)+(it.gstPct?' <span style="color:var(--text2)">(+'+it.gstPct+'% GST)</span>':'')+'</td>'+
+      '<td class="r" style="font-size:11px">'+inrLC(it.making||0)+(it.wastagePct?' <span style="color:var(--amber)">(+'+it.wastagePct+'% wastage)</span>':'')+(it.gstPct?' <span style="color:var(--text2)">(+'+it.gstPct+'% GST)</span>':'')+'</td>'+
       '<td class="r" style="color:var(--blue);font-weight:700">'+inrLC(invested)+'</td>'+
       '<td class="r">'+inrLC(rate24k)+'</td>'+
       '<td class="r '+(cv>invested?'gain-txt':'loss-txt')+'">'+inrLC(cv)+'</td>'+
@@ -6313,6 +6323,7 @@ function renderGold(){
         '</div></div>'+
       '<div class="re-row"><span class="lbl">Purchase Shop</span><span class="val">'+(it.shop||'—')+'</span></div>'+
       '<div class="re-row"><span class="lbl">Purchase Rate</span><span class="val">'+inrLC(it.purchaseRate||0)+'/g</span></div>'+
+      '<div class="re-row"><span class="lbl">Wastage</span><span class="val">'+(it.wastagePct||0)+'% ('+inrLC((it.weight||0)*(it.purchaseRate||0)*(it.wastagePct||0)/100)+')</span></div>'+
       '<div class="re-row"><span class="lbl">Making + GST</span><span class="val">'+inrLC((it.making||0)+(it.making||0)*(it.gstPct||0)/100)+'</span></div>'+
       '<div class="re-row" style="font-weight:700"><span class="lbl">Total Invested</span><span class="val">'+inrLC(it.totalInvested||0)+'</span></div>'+
       '<div class="re-return-bar">'+
