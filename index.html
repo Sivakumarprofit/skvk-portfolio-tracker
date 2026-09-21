@@ -246,7 +246,7 @@ tr:hover .acts{opacity:1}
 .page-tabs{display:flex;gap:4px;margin-bottom:16px;border-bottom:2px solid var(--border);padding-bottom:0}
 .page-tab{padding:11px 20px;font-size:15px;font-weight:700;color:var(--text2);cursor:pointer;border:none;background:none;border-bottom:3px solid transparent;margin-bottom:-2px;border-radius:6px 6px 0 0;display:flex;align-items:center;gap:7px;transition:all .15s}
 .page-tab:hover{background:var(--bg2);color:var(--text)}
-.page-tab.active{color:var(--blue);border-bottom-color:var(--blue);background:var(--bg)}
+.page-tab.active{color:#fff;border-bottom-color:var(--blue);background:var(--blue)}
 .page-tab .tab-icon{font-size:17px}
 
 /* ── LOCK BUTTON ── */
@@ -381,6 +381,12 @@ tr:hover .acts{opacity:1}
 .nw-rupee-input:focus-within{border-color:var(--blue)}
 .nw-rupee-input span{color:var(--text2);font-size:13px;font-weight:600}
 .nw-rupee-input input{border:none;outline:none;background:transparent;font-size:13px;font-weight:600;color:var(--text);width:110px;text-align:right}
+.toggle-switch{position:relative;display:inline-block;width:38px;height:21px;vertical-align:middle}
+.toggle-switch input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background-color:var(--border2);transition:.2s;border-radius:21px}
+.toggle-slider:before{position:absolute;content:"";height:15px;width:15px;left:3px;bottom:3px;background-color:#fff;transition:.2s;border-radius:50%}
+.toggle-switch input:checked + .toggle-slider{background-color:var(--blue)}
+.toggle-switch input:checked + .toggle-slider:before{transform:translateX(17px)}
 .nw-val-display{text-align:right}
 .nw-val-main{font-size:18px;font-weight:700;color:var(--text)}
 .nw-val-sub{font-size:12px;color:var(--text2);margin-top:2px}
@@ -475,7 +481,7 @@ tr:hover .acts{opacity:1}
     <div class="topbar-left">
       <span class="online-badge"><i class="ti ti-wifi" style="font-size:10px"></i> Live Shared</span>
     </div>
-    <h1><i class="ti ti-chart-bar" style="color:var(--blue)"></i>SKVK Portfolio Tracker <span class="version-badge">v22.5</span></h1>
+    <h1><i class="ti ti-chart-bar" style="color:var(--blue)"></i>SKVK Portfolio Tracker <span class="version-badge">v22.6</span></h1>
     <div class="topbar-right">
       <span class="hint" id="lastFetch"></span>
       <div id="fetchStatus"></div>
@@ -755,9 +761,10 @@ tr:hover .acts{opacity:1}
           <thead><tr>
             <th style="min-width:90px">Purchase Date</th>
             <th style="min-width:140px">Item Name</th>
+            <th class="r" style="min-width:60px">Pieces</th>
             <th style="min-width:120px">Purchase Shop</th>
             <th style="min-width:60px">Purity</th>
-            <th class="r" style="min-width:80px">Weight</th>
+            <th class="r" style="min-width:90px">Weight <span style="font-size:9px;opacity:.7">(+ Sov)</span></th>
             <th class="r" style="min-width:100px">Purchase Rate ₹/g</th>
             <th class="r" style="min-width:150px">Making + Wastage + GST</th>
             <th class="r" style="min-width:110px">Total Invested</th>
@@ -776,7 +783,7 @@ tr:hover .acts{opacity:1}
     <!-- Chart + Details -->
     <div class="re-alloc-wrap">
       <div class="alloc-chart-wrap">
-        <h3>Allocation by Purity</h3>
+        <h3>Allocation by Item</h3>
         <canvas id="goldPieCanvas" width="260" height="260"></canvas>
         <div class="alloc-legend" id="goldLegend"></div>
       </div>
@@ -1064,6 +1071,7 @@ tr:hover .acts{opacity:1}
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
           <div class="mf"><label>Purchase Date *</label><input id="gold_date" type="date"></div>
           <div class="mf"><label>Item Name *</label><input id="gold_name" placeholder="e.g. Wedding Chain"></div>
+          <div class="mf"><label>No. of Pieces</label><input id="gold_pieces" type="number" step="1" min="1" placeholder="1"></div>
           <div class="mf"><label>Purchase Shop</label><input id="gold_shop" placeholder="e.g. Joyalukkas - Chennai"></div>
           <div class="mf"><label>Purity</label>
             <select id="gold_purity">
@@ -1079,12 +1087,13 @@ tr:hover .acts{opacity:1}
           <div class="mf"><label>GST % (on making)</label><input id="gold_gst" type="number" step="0.01" placeholder="3" oninput="calcGoldCost()"></div>
           <div class="mf"><label>Total Invested ₹</label><input id="gold_total" type="number" placeholder="Auto-calculated" style="background:var(--bg2);font-weight:700" readonly></div>
           <div class="mf"><label>Storage Location</label>
-            <select id="gold_storage">
-              <option value="Bank locker">Bank locker</option>
-              <option value="Home">Home</option>
-              <option value="Bank FD-linked">Bank FD-linked</option>
+            <select id="gold_storage" onchange="goldStorageChanged()">
+              <option value="Bank Locker">Bank Locker</option>
+              <option value="Home (Bero)">Home (Bero)</option>
+              <option value="Bank Loan">Bank Loan</option>
             </select>
           </div>
+          <div class="mf" id="gold_bankname_wrap" style="display:none"><label>Bank Name</label><input id="gold_bankname" placeholder="e.g. SBI, HDFC"></div>
           <div class="mf"><label>Consider in Networth?</label>
             <select id="gold_innetworth">
               <option value="Yes">Yes</option>
@@ -3594,11 +3603,19 @@ function openGoldModal(id){
   document.getElementById('gold_making').value=it.making||'';
   document.getElementById('gold_wastage').value=(it.wastagePct!==undefined&&it.wastagePct!==null)?it.wastagePct:0;
   document.getElementById('gold_gst').value=(it.gstPct!==undefined&&it.gstPct!==null)?it.gstPct:3;
-  document.getElementById('gold_storage').value=it.storage||'Bank locker';
+  document.getElementById('gold_pieces').value=(it.pieces!==undefined&&it.pieces!==null)?it.pieces:1;
+  document.getElementById('gold_storage').value=it.storage||'Bank Locker';
+  document.getElementById('gold_bankname').value=it.bankName||'';
+  goldStorageChanged();
   document.getElementById('gold_innetworth').value=it.inNetworth||'Yes';
   document.getElementById('gold_total').value=it.totalInvested||'';
   calcGoldCost();
   document.getElementById('goldModalOverlay').style.display='flex';
+}
+function goldStorageChanged(){
+  var v=document.getElementById('gold_storage').value;
+  var wrap=document.getElementById('gold_bankname_wrap');
+  if(wrap) wrap.style.display=(v==='Bank Loan')?'':'none';
 }
 function closeGoldModal(){ document.getElementById('goldModalOverlay').style.display='none'; }
 
@@ -3627,13 +3644,16 @@ async function saveGold(){
   var wastagePct=parseFloat(document.getElementById('gold_wastage').value)||0;
   var gstPct=parseFloat(document.getElementById('gold_gst').value)||0;
   var total=parseFloat(document.getElementById('gold_total').value)||(weight*rate+weight*rate*wastagePct/100+making+making*gstPct/100);
+  var storageVal=document.getElementById('gold_storage').value;
   var item={
     name: name, date: date,
+    pieces: parseInt(document.getElementById('gold_pieces').value)||1,
     shop: (document.getElementById('gold_shop').value||'').trim(),
     purity: document.getElementById('gold_purity').value,
     weight: weight, purchaseRate: rate, making: making, wastagePct: wastagePct, gstPct: gstPct,
     totalInvested: total,
-    storage: document.getElementById('gold_storage').value,
+    storage: storageVal,
+    bankName: storageVal==='Bank Loan'?(document.getElementById('gold_bankname').value||'').trim():'',
     inNetworth: document.getElementById('gold_innetworth').value,
     notes: (goldEditId&&goldItems[goldEditId])?(goldItems[goldEditId].notes||''):''
   };
@@ -3704,7 +3724,7 @@ function renderGold(){
   var avgYrs=nwItems.length>0?(totalYrs/nwItems.length):0;
 
   document.getElementById('goldSummary').innerHTML=
-    '<div class="scard"><div class="lbl">Total Weight</div><div class="val">'+totalWeight.toFixed(1)+' g</div></div>'+
+    '<div class="scard"><div class="lbl">Total Weight</div><div class="val">'+totalWeight.toFixed(1)+' g<div style="font-size:10px;color:var(--text2);font-weight:400">('+fmtSov(totalWeight)+')</div></div></div>'+
     '<div class="scard"><div class="lbl">Total Invested</div><div class="val">'+inrLC(totalInvested)+'<div style="font-size:10px;color:var(--text2);font-weight:400">'+inr(totalInvested)+'</div></div></div>'+
     '<div class="scard"><div class="lbl">Current Value</div><div class="val">'+inrLC(totalCurrVal)+'<div style="font-size:10px;color:var(--text2);font-weight:400">'+inr(totalCurrVal)+'</div></div></div>'+
     '<div class="scard"><div class="lbl">Overall P&L</div><div class="val '+(totalPnl>=0?'gain-txt':'loss-txt')+'">'+(totalPnl>=0?'+':'')+inrLC(totalPnl)+'<div style="font-size:10px;font-weight:400">'+totalPct.toFixed(1)+'%</div></div></div>'+
@@ -3730,16 +3750,17 @@ function renderGold(){
     return '<tr class="'+(isArchived?'re-row-archived':'')+'">'+
       '<td style="font-size:12px">'+(it.date||'—')+'</td>'+
       '<td style="font-weight:600">'+it.name+(isArchived?'<span class="re-archived-badge">ARCHIVED</span>':'')+'</td>'+
+      '<td class="r">'+((it.pieces!==undefined&&it.pieces!==null)?it.pieces:1)+'</td>'+
       '<td style="font-size:12px">'+(it.shop||'—')+'</td>'+
       '<td><span class="badge">'+(it.purity||'22K')+'</span></td>'+
-      '<td class="r">'+(it.weight||0).toFixed(1)+' g</td>'+
+      '<td class="r">'+(it.weight||0).toFixed(1)+' g<div style="font-size:10px;color:var(--text2)">('+fmtSov(it.weight||0)+')</div></td>'+
       '<td class="r">'+inr(it.purchaseRate||0)+'</td>'+
       '<td class="r" style="font-size:11px">'+inrLC(it.making||0)+(it.wastagePct?' <span style="color:var(--amber)">(+'+it.wastagePct+'% = '+fmtKL((it.weight||0)*(it.purchaseRate||0)*(it.wastagePct||0)/100)+' wastage)</span>':'')+(it.gstPct?' <span style="color:var(--text2)">(+'+it.gstPct+'% GST)</span>':'')+'</td>'+
       '<td class="r" style="color:var(--blue);font-weight:700">'+inrLC(invested)+'</td>'+
       '<td class="r"><input type="number" step="0.01" value="'+effRate(it).toFixed(2)+'" data-gid="'+iid+'" '+(isArchived?'disabled ':'')+'style="width:85px;padding:4px 6px;border:1px solid var(--border);border-radius:4px;font-size:12px;text-align:right" onblur="goldItemRateBlur(this)" onkeydown="if(event.keyCode===13)this.blur()"></td>'+
       '<td class="r '+(cv>invested?'gain-txt':'loss-txt')+'">'+inrLC(cv)+'</td>'+
       '<td class="r '+(pnl>=0?'gain-txt':'loss-txt')+'">'+(pnl>=0?'+':'')+inrLC(pnl)+'<div style="font-size:10px;font-weight:400">'+pct.toFixed(1)+'%</div></td>'+
-      '<td style="font-size:12px">'+(it.storage||'—')+'</td>'+
+      '<td style="font-size:12px">'+(it.storage||'—')+((it.storage==='Bank Loan'&&it.bankName)?' <span style="color:var(--text2)">('+it.bankName+')</span>':'')+'</td>'+
       '<td><span class="badge '+(inNW?'bg':'br')+'">'+(inNW?'Yes':'No')+'</span></td>'+
       '<td><div style="display:flex;gap:4px;flex-wrap:wrap">'+actionBtns+'</div></td>'+
       '</tr>';
@@ -3747,23 +3768,23 @@ function renderGold(){
 
   var tbody=document.getElementById('goldMainTbody');
   if(!allItems.length){
-    tbody.innerHTML='<tr><td colspan="14" style="text-align:center;padding:32px;color:var(--text2)">No gold items yet. Click <b>+ Add Gold</b> to begin.</td></tr>';
+    tbody.innerHTML='<tr><td colspan="15" style="text-align:center;padding:32px;color:var(--text2)">No gold items yet. Click <b>+ Add Gold</b> to begin.</td></tr>';
   } else {
     tbody.innerHTML=items.map(function(it){ return goldRow(it,false); }).join('')+
       archivedItems.map(function(it){ return goldRow(it,true); }).join('');
   }
 
-  // Pie by purity (Networth-eligible active items only)
-  var purityTotals={};
-  nwItems.forEach(function(it){
-    var k=it.purity||'22K';
-    purityTotals[k]=(purityTotals[k]||0)+currVal(it);
+  // Pie by item (Networth-eligible active items only), sized by weight
+  var pieData=nwItems.map(function(it,i){
+    return {
+      label: it.name+' — '+(it.weight||0).toFixed(1)+' g ('+fmtSov(it.weight||0)+')',
+      value: it.weight||0,
+      color: PIE_COLORS[i%PIE_COLORS.length]
+    };
   });
-  var pieData=Object.keys(purityTotals).map(function(k,i){
-    return {label:k, value:purityTotals[k], color:PIE_COLORS[i%PIE_COLORS.length]};
-  });
+  var totalPieWeight=nwItems.reduce(function(s,it){ return s+(it.weight||0); },0);
   drawPie('goldPieCanvas',pieData);
-  buildLegend('goldLegend',pieData,totalCurrVal||1);
+  buildLegend('goldLegend',pieData,totalPieWeight||1);
 
   function goldCard(it, isArchived){
     var cv=currVal(it);
@@ -3772,9 +3793,9 @@ function renderGold(){
     return '<div class="re-card'+(isArchived?' re-card-archived':'')+'">'+
       '<div class="re-card-header">'+
         '<div><div class="re-card-name">'+it.name+(isArchived?'<span class="re-archived-badge">ARCHIVED</span>':'')+'</div>'+
-        '<div style="font-size:11px;color:var(--text2)">'+(it.date||'')+' &middot; '+(it.weight||0)+' g &middot; '+(it.purity||'22K')+'</div></div>'+
+        '<div style="font-size:11px;color:var(--text2)">'+(it.date||'')+' &middot; '+((it.pieces!==undefined&&it.pieces!==null)?it.pieces:1)+' pc &middot; '+(it.weight||0)+' g ('+fmtSov(it.weight||0)+') &middot; '+(it.purity||'22K')+'</div></div>'+
         '<div style="display:flex;gap:6px;align-items:center">'+
-          '<span class="re-card-type">'+(it.storage||'—')+'</span>'+
+          '<span class="re-card-type">'+(it.storage||'—')+((it.storage==='Bank Loan'&&it.bankName)?' ('+it.bankName+')':'')+'</span>'+
           '<button class="ib" data-gid="'+it._id+'" data-act="edit" title="Edit"><i class="ti ti-edit"></i></button>'+
           '<button class="ib note" data-gid="'+it._id+'" data-act="notes" title="Notes"><i class="ti ti-notes"></i></button>'+
           (isArchived?
@@ -3969,6 +3990,9 @@ function fmtKL(val){
   return sign+'₹'+(v/1000).toFixed(2)+' K';
 }
 
+// 1 Sovereign = 8 grams
+function fmtSov(grams){ return (((grams)||0)/8).toFixed(1)+' Sov'; }
+
 var NW_ASSETS_DEF = [
   {key:'realEstate',   label:'Real Estate',          auto:true,  autoSrc:'re'},
   {key:'equity',       label:'Equity (Shares)',       auto:true,  autoSrc:'eq',   assetTypes:['EQUITY','ETF']},
@@ -4028,6 +4052,8 @@ function getAutoAssetVal(def){
       .reduce((s,st)=>s+calc(st).cv,0);
   }
   if(def.autoSrc==='goldphys'){
+    var goldToggle=(nwData.categoryToggles||{}).goldPhysical;
+    if(goldToggle===false) return 0;
     return Object.values(goldItems)
       .filter(function(it){ return !it.archived && it.inNetworth!=='No'; })
       .reduce(function(s,it){
@@ -6105,11 +6131,19 @@ function openGoldModal(id){
   document.getElementById('gold_making').value=it.making||'';
   document.getElementById('gold_wastage').value=(it.wastagePct!==undefined&&it.wastagePct!==null)?it.wastagePct:0;
   document.getElementById('gold_gst').value=(it.gstPct!==undefined&&it.gstPct!==null)?it.gstPct:3;
-  document.getElementById('gold_storage').value=it.storage||'Bank locker';
+  document.getElementById('gold_pieces').value=(it.pieces!==undefined&&it.pieces!==null)?it.pieces:1;
+  document.getElementById('gold_storage').value=it.storage||'Bank Locker';
+  document.getElementById('gold_bankname').value=it.bankName||'';
+  goldStorageChanged();
   document.getElementById('gold_innetworth').value=it.inNetworth||'Yes';
   document.getElementById('gold_total').value=it.totalInvested||'';
   calcGoldCost();
   document.getElementById('goldModalOverlay').style.display='flex';
+}
+function goldStorageChanged(){
+  var v=document.getElementById('gold_storage').value;
+  var wrap=document.getElementById('gold_bankname_wrap');
+  if(wrap) wrap.style.display=(v==='Bank Loan')?'':'none';
 }
 function closeGoldModal(){ document.getElementById('goldModalOverlay').style.display='none'; }
 
@@ -6138,13 +6172,16 @@ async function saveGold(){
   var wastagePct=parseFloat(document.getElementById('gold_wastage').value)||0;
   var gstPct=parseFloat(document.getElementById('gold_gst').value)||0;
   var total=parseFloat(document.getElementById('gold_total').value)||(weight*rate+weight*rate*wastagePct/100+making+making*gstPct/100);
+  var storageVal=document.getElementById('gold_storage').value;
   var item={
     name: name, date: date,
+    pieces: parseInt(document.getElementById('gold_pieces').value)||1,
     shop: (document.getElementById('gold_shop').value||'').trim(),
     purity: document.getElementById('gold_purity').value,
     weight: weight, purchaseRate: rate, making: making, wastagePct: wastagePct, gstPct: gstPct,
     totalInvested: total,
-    storage: document.getElementById('gold_storage').value,
+    storage: storageVal,
+    bankName: storageVal==='Bank Loan'?(document.getElementById('gold_bankname').value||'').trim():'',
     inNetworth: document.getElementById('gold_innetworth').value,
     notes: (goldEditId&&goldItems[goldEditId])?(goldItems[goldEditId].notes||''):''
   };
@@ -6215,7 +6252,7 @@ function renderGold(){
   var avgYrs=nwItems.length>0?(totalYrs/nwItems.length):0;
 
   document.getElementById('goldSummary').innerHTML=
-    '<div class="scard"><div class="lbl">Total Weight</div><div class="val">'+totalWeight.toFixed(1)+' g</div></div>'+
+    '<div class="scard"><div class="lbl">Total Weight</div><div class="val">'+totalWeight.toFixed(1)+' g<div style="font-size:10px;color:var(--text2);font-weight:400">('+fmtSov(totalWeight)+')</div></div></div>'+
     '<div class="scard"><div class="lbl">Total Invested</div><div class="val">'+inrLC(totalInvested)+'<div style="font-size:10px;color:var(--text2);font-weight:400">'+inr(totalInvested)+'</div></div></div>'+
     '<div class="scard"><div class="lbl">Current Value</div><div class="val">'+inrLC(totalCurrVal)+'<div style="font-size:10px;color:var(--text2);font-weight:400">'+inr(totalCurrVal)+'</div></div></div>'+
     '<div class="scard"><div class="lbl">Overall P&L</div><div class="val '+(totalPnl>=0?'gain-txt':'loss-txt')+'">'+(totalPnl>=0?'+':'')+inrLC(totalPnl)+'<div style="font-size:10px;font-weight:400">'+totalPct.toFixed(1)+'%</div></div></div>'+
@@ -6241,16 +6278,17 @@ function renderGold(){
     return '<tr class="'+(isArchived?'re-row-archived':'')+'">'+
       '<td style="font-size:12px">'+(it.date||'—')+'</td>'+
       '<td style="font-weight:600">'+it.name+(isArchived?'<span class="re-archived-badge">ARCHIVED</span>':'')+'</td>'+
+      '<td class="r">'+((it.pieces!==undefined&&it.pieces!==null)?it.pieces:1)+'</td>'+
       '<td style="font-size:12px">'+(it.shop||'—')+'</td>'+
       '<td><span class="badge">'+(it.purity||'22K')+'</span></td>'+
-      '<td class="r">'+(it.weight||0).toFixed(1)+' g</td>'+
+      '<td class="r">'+(it.weight||0).toFixed(1)+' g<div style="font-size:10px;color:var(--text2)">('+fmtSov(it.weight||0)+')</div></td>'+
       '<td class="r">'+inr(it.purchaseRate||0)+'</td>'+
       '<td class="r" style="font-size:11px">'+inrLC(it.making||0)+(it.wastagePct?' <span style="color:var(--amber)">(+'+it.wastagePct+'% = '+fmtKL((it.weight||0)*(it.purchaseRate||0)*(it.wastagePct||0)/100)+' wastage)</span>':'')+(it.gstPct?' <span style="color:var(--text2)">(+'+it.gstPct+'% GST)</span>':'')+'</td>'+
       '<td class="r" style="color:var(--blue);font-weight:700">'+inrLC(invested)+'</td>'+
       '<td class="r"><input type="number" step="0.01" value="'+effRate(it).toFixed(2)+'" data-gid="'+iid+'" '+(isArchived?'disabled ':'')+'style="width:85px;padding:4px 6px;border:1px solid var(--border);border-radius:4px;font-size:12px;text-align:right" onblur="goldItemRateBlur(this)" onkeydown="if(event.keyCode===13)this.blur()"></td>'+
       '<td class="r '+(cv>invested?'gain-txt':'loss-txt')+'">'+inrLC(cv)+'</td>'+
       '<td class="r '+(pnl>=0?'gain-txt':'loss-txt')+'">'+(pnl>=0?'+':'')+inrLC(pnl)+'<div style="font-size:10px;font-weight:400">'+pct.toFixed(1)+'%</div></td>'+
-      '<td style="font-size:12px">'+(it.storage||'—')+'</td>'+
+      '<td style="font-size:12px">'+(it.storage||'—')+((it.storage==='Bank Loan'&&it.bankName)?' <span style="color:var(--text2)">('+it.bankName+')</span>':'')+'</td>'+
       '<td><span class="badge '+(inNW?'bg':'br')+'">'+(inNW?'Yes':'No')+'</span></td>'+
       '<td><div style="display:flex;gap:4px;flex-wrap:wrap">'+actionBtns+'</div></td>'+
       '</tr>';
@@ -6258,23 +6296,23 @@ function renderGold(){
 
   var tbody=document.getElementById('goldMainTbody');
   if(!allItems.length){
-    tbody.innerHTML='<tr><td colspan="14" style="text-align:center;padding:32px;color:var(--text2)">No gold items yet. Click <b>+ Add Gold</b> to begin.</td></tr>';
+    tbody.innerHTML='<tr><td colspan="15" style="text-align:center;padding:32px;color:var(--text2)">No gold items yet. Click <b>+ Add Gold</b> to begin.</td></tr>';
   } else {
     tbody.innerHTML=items.map(function(it){ return goldRow(it,false); }).join('')+
       archivedItems.map(function(it){ return goldRow(it,true); }).join('');
   }
 
-  // Pie by purity (Networth-eligible active items only)
-  var purityTotals={};
-  nwItems.forEach(function(it){
-    var k=it.purity||'22K';
-    purityTotals[k]=(purityTotals[k]||0)+currVal(it);
+  // Pie by item (Networth-eligible active items only), sized by weight
+  var pieData=nwItems.map(function(it,i){
+    return {
+      label: it.name+' — '+(it.weight||0).toFixed(1)+' g ('+fmtSov(it.weight||0)+')',
+      value: it.weight||0,
+      color: PIE_COLORS[i%PIE_COLORS.length]
+    };
   });
-  var pieData=Object.keys(purityTotals).map(function(k,i){
-    return {label:k, value:purityTotals[k], color:PIE_COLORS[i%PIE_COLORS.length]};
-  });
+  var totalPieWeight=nwItems.reduce(function(s,it){ return s+(it.weight||0); },0);
   drawPie('goldPieCanvas',pieData);
-  buildLegend('goldLegend',pieData,totalCurrVal||1);
+  buildLegend('goldLegend',pieData,totalPieWeight||1);
 
   function goldCard(it, isArchived){
     var cv=currVal(it);
@@ -6283,9 +6321,9 @@ function renderGold(){
     return '<div class="re-card'+(isArchived?' re-card-archived':'')+'">'+
       '<div class="re-card-header">'+
         '<div><div class="re-card-name">'+it.name+(isArchived?'<span class="re-archived-badge">ARCHIVED</span>':'')+'</div>'+
-        '<div style="font-size:11px;color:var(--text2)">'+(it.date||'')+' &middot; '+(it.weight||0)+' g &middot; '+(it.purity||'22K')+'</div></div>'+
+        '<div style="font-size:11px;color:var(--text2)">'+(it.date||'')+' &middot; '+((it.pieces!==undefined&&it.pieces!==null)?it.pieces:1)+' pc &middot; '+(it.weight||0)+' g ('+fmtSov(it.weight||0)+') &middot; '+(it.purity||'22K')+'</div></div>'+
         '<div style="display:flex;gap:6px;align-items:center">'+
-          '<span class="re-card-type">'+(it.storage||'—')+'</span>'+
+          '<span class="re-card-type">'+(it.storage||'—')+((it.storage==='Bank Loan'&&it.bankName)?' ('+it.bankName+')':'')+'</span>'+
           '<button class="ib" data-gid="'+it._id+'" data-act="edit" title="Edit"><i class="ti ti-edit"></i></button>'+
           '<button class="ib note" data-gid="'+it._id+'" data-act="notes" title="Notes"><i class="ti ti-notes"></i></button>'+
           (isArchived?
@@ -6479,6 +6517,9 @@ function fmtKL(val){
   return sign+'₹'+(v/1000).toFixed(2)+' K';
 }
 
+// 1 Sovereign = 8 grams
+function fmtSov(grams){ return (((grams)||0)/8).toFixed(1)+' Sov'; }
+
 var NW_ASSETS_DEF = [
   {key:'realEstate',   label:'Real Estate',          auto:true,  autoSrc:'re'},
   {key:'equity',       label:'Equity (Shares)',       auto:true,  autoSrc:'eq',   assetTypes:['EQUITY','ETF']},
@@ -6539,6 +6580,8 @@ function getAutoAssetVal(def){
       .reduce((s,st)=>s+calc(st).cv,0);
   }
   if(def.autoSrc==='goldphys'){
+    var goldToggle=(nwData.categoryToggles||{}).goldPhysical;
+    if(goldToggle===false) return 0;
     return Object.values(goldItems)
       .filter(function(it){ return !it.archived && it.inNetworth!=='No'; })
       .reduce(function(s,it){
@@ -6595,7 +6638,15 @@ function renderNetworth(){
     var v=assetVals[def.key]||0;
     var pct=totalAssets>0?(v/totalAssets*100):0;
     var inputField=def.auto
-      ? `<span style="font-size:11px;color:var(--text3);padding:5px 10px;font-style:italic">Auto-filled</span>`
+      ? (def.key==='goldPhysical'
+          ? `<div style="display:flex;align-items:center;gap:8px;justify-content:flex-end">
+               <span style="font-size:11px;color:var(--text3);font-style:italic">${(nwData.categoryToggles||{}).goldPhysical===false?'Excluded':'Auto-filled'}</span>
+               <label class="toggle-switch" title="Include Gold (Physical) in Net Worth">
+                 <input type="checkbox" ${(nwData.categoryToggles||{}).goldPhysical===false?'':'checked'} onchange="toggleNWCategory('goldPhysical')">
+                 <span class="toggle-slider"></span>
+               </label>
+             </div>`
+          : `<span style="font-size:11px;color:var(--text3);padding:5px 10px;font-style:italic">Auto-filled</span>`)
       : `<div class="nw-rupee-input"><span>₹</span><input type="text" value="${v||''}" placeholder="0" 
           onchange="nwAssetChanged('${def.key}',this.value)" oninput="nwAssetChanged('${def.key}',this.value)"></div>`;
     var leftColor=NW_COLOR_MAP[def.key]||'#6b7280';
@@ -6636,6 +6687,17 @@ function renderNetworth(){
 function nwAssetChanged(key,val){
   if(!nwData.manualAssets) nwData.manualAssets={};
   nwData.manualAssets[key]=parseFloat(val.replace(/,/g,''))||0;
+  renderNetworth();
+}
+
+async function toggleNWCategory(key){
+  var cur=(nwData.categoryToggles||{})[key];
+  var next=(cur===false)?true:false;
+  if(!nwData.categoryToggles) nwData.categoryToggles={};
+  nwData.categoryToggles[key]=next;
+  try{
+    await db.ref('portfolio/networth/categoryToggles/'+key).set(next);
+  } catch(ex){ toast('Save failed',true); }
   renderNetworth();
 }
 
