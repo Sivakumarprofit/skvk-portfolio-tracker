@@ -475,7 +475,7 @@ tr:hover .acts{opacity:1}
     <div class="topbar-left">
       <span class="online-badge"><i class="ti ti-wifi" style="font-size:10px"></i> Live Shared</span>
     </div>
-    <h1><i class="ti ti-chart-bar" style="color:var(--blue)"></i>SKVK Portfolio Tracker <span class="version-badge">v22.2</span></h1>
+    <h1><i class="ti ti-chart-bar" style="color:var(--blue)"></i>SKVK Portfolio Tracker <span class="version-badge">v22.3</span></h1>
     <div class="topbar-right">
       <span class="hint" id="lastFetch"></span>
       <div id="fetchStatus"></div>
@@ -741,11 +741,6 @@ tr:hover .acts{opacity:1}
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
       <h2 style="font-size:18px;font-weight:700">🪙 Physical Gold</h2>
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-        <div style="display:flex;gap:6px;align-items:center;background:var(--bg2);padding:6px 10px;border-radius:8px">
-          <label style="font-size:11px;color:var(--text2)">24K Rate ₹/g</label>
-          <input type="number" step="0.01" id="gold_curr_rate" placeholder="0.00" style="width:90px;padding:4px 6px;border:1px solid var(--border);border-radius:4px;font-size:12px;text-align:right" onblur="goldRateBlur(this)" onkeydown="if(event.keyCode===13)this.blur()">
-          <input type="date" id="gold_ratedate" style="padding:4px 6px;border:1px solid var(--border);border-radius:4px;font-size:11px" onchange="goldRateDateChange(this)">
-        </div>
         <button class="btn primary" onclick="openGoldModal()"><i class="ti ti-plus"></i> Add Gold</button>
       </div>
     </div>
@@ -766,7 +761,7 @@ tr:hover .acts{opacity:1}
             <th class="r" style="min-width:100px">Purchase Rate ₹/g</th>
             <th class="r" style="min-width:150px">Making + Wastage + GST</th>
             <th class="r" style="min-width:110px">Total Invested</th>
-            <th class="r" style="min-width:95px">Current Rate ₹/g <span style="font-size:9px;opacity:.7">(editable, global)</span></th>
+            <th class="r" style="min-width:100px">Current Rate ₹/g <span style="font-size:9px;opacity:.7">(editable)</span></th>
             <th class="r" style="min-width:110px">Current Value</th>
             <th class="r" style="min-width:100px">P&amp;L</th>
             <th style="min-width:100px">Storage</th>
@@ -3562,20 +3557,29 @@ function importREExcel(event){
 // ════════════════════════════════════════════════════════════════
 // ── PHYSICAL GOLD ──────────────────────────────────────
 // ════════════════════════════════════════════════════════════════
-var goldItems={}, goldEditId=null, goldMeta={}, goldNotesId=null;
+var goldItems={}, goldEditId=null, goldNotesId=null;
 
 function subscribeToGold(){
   db.ref('portfolio/goldPhysical').on('value', function(snap){
     goldItems=snap.val()||{};
     if(currentPageTab==='gold') renderGold();
   });
-  db.ref('portfolio/goldMeta').on('value', function(snap){
-    goldMeta=snap.val()||{};
-    if(currentPageTab==='gold') renderGold();
-  });
 }
 
-function goldPurityFactor(p){ return p==='22K'?(22/24):p==='18K'?(18/24):1; }
+function goldItemRateBlur(el){
+  var gid=el.getAttribute('data-gid');
+  saveGoldItemRate(gid, el.value);
+}
+async function saveGoldItemRate(id, rate){
+  if(!id) return;
+  try{
+    var r=parseFloat(rate)||0;
+    await db.ref('portfolio/goldPhysical/'+id+'/currentRate').set(r);
+    if(goldItems[id]) goldItems[id].currentRate=r;
+    renderGold();
+    toast('Current rate saved');
+  } catch(ex){ toast('Save failed',true); }
+}
 
 function openGoldModal(id){
   goldEditId=id||null;
@@ -3683,36 +3687,12 @@ async function saveGoldNotes(){
   } catch(ex){ toast('Save failed',true); }
 }
 
-function goldRateBlur(el){
-  var dEl=document.getElementById('gold_ratedate');
-  saveGoldRate(el.value, dEl?dEl.value:'');
-}
-function goldRateDateChange(el){
-  var rEl=document.getElementById('gold_curr_rate');
-  saveGoldRate(rEl?rEl.value:'', el.value);
-}
-async function saveGoldRate(rate, rateDate){
-  try{
-    var r=parseFloat(rate)||0;
-    await db.ref('portfolio/goldMeta').update({rate24k:r, rateDate:rateDate||''});
-    goldMeta={rate24k:r, rateDate:rateDate||''};
-    renderGold();
-    toast('Gold rate saved');
-  } catch(ex){ toast('Save failed',true); }
-}
-
 function renderGold(){
   var allItems=Object.entries(goldItems).map(function(e){ return Object.assign({},e[1],{_id:e[0]}); });
   var items=allItems.filter(function(it){ return !it.archived; });
   var archivedItems=allItems.filter(function(it){ return !!it.archived; });
-  var rate24k=parseFloat((goldMeta&&goldMeta.rate24k)||0);
-
-  var rateInput=document.getElementById('gold_curr_rate');
-  if(rateInput && document.activeElement!==rateInput) rateInput.value=(goldMeta&&goldMeta.rate24k)||'';
-  var rateDateInput=document.getElementById('gold_ratedate');
-  if(rateDateInput && document.activeElement!==rateDateInput) rateDateInput.value=(goldMeta&&goldMeta.rateDate)||'';
-
-  function currVal(it){ return (it.weight||0)*rate24k*goldPurityFactor(it.purity); }
+  function effRate(it){ var r=parseFloat(it.currentRate); return (r&&r>0)?r:(it.purchaseRate||0); }
+  function currVal(it){ return (it.weight||0)*effRate(it); }
 
   var nwItems=items.filter(function(it){ return it.inNetworth!=='No'; });
   var totalWeight=nwItems.reduce(function(s,it){ return s+(it.weight||0); },0);
@@ -3753,9 +3733,9 @@ function renderGold(){
       '<td><span class="badge">'+(it.purity||'22K')+'</span></td>'+
       '<td class="r">'+(it.weight||0).toFixed(1)+' g</td>'+
       '<td class="r">'+inrLC(it.purchaseRate||0)+'</td>'+
-      '<td class="r" style="font-size:11px">'+inrLC(it.making||0)+(it.wastagePct?' <span style="color:var(--amber)">(+'+it.wastagePct+'% wastage)</span>':'')+(it.gstPct?' <span style="color:var(--text2)">(+'+it.gstPct+'% GST)</span>':'')+'</td>'+
+      '<td class="r" style="font-size:11px">'+inrLC(it.making||0)+(it.wastagePct?' <span style="color:var(--amber)">(+'+it.wastagePct+'% = '+inrLC((it.weight||0)*(it.purchaseRate||0)*(it.wastagePct||0)/100)+' wastage)</span>':'')+(it.gstPct?' <span style="color:var(--text2)">(+'+it.gstPct+'% GST)</span>':'')+'</td>'+
       '<td class="r" style="color:var(--blue);font-weight:700">'+inrLC(invested)+'</td>'+
-      '<td class="r">'+inrLC(rate24k)+'</td>'+
+      '<td class="r"><input type="number" step="0.01" value="'+effRate(it).toFixed(2)+'" data-gid="'+iid+'" '+(isArchived?'disabled ':'')+'style="width:85px;padding:4px 6px;border:1px solid var(--border);border-radius:4px;font-size:12px;text-align:right" onblur="goldItemRateBlur(this)" onkeydown="if(event.keyCode===13)this.blur()"></td>'+
       '<td class="r '+(cv>invested?'gain-txt':'loss-txt')+'">'+inrLC(cv)+'</td>'+
       '<td class="r '+(pnl>=0?'gain-txt':'loss-txt')+'">'+(pnl>=0?'+':'')+inrLC(pnl)+'<div style="font-size:10px;font-weight:400">'+pct.toFixed(1)+'%</div></td>'+
       '<td style="font-size:12px">'+(it.storage||'—')+'</td>'+
@@ -4039,12 +4019,11 @@ function getAutoAssetVal(def){
       .reduce((s,st)=>s+calc(st).cv,0);
   }
   if(def.autoSrc==='goldphys'){
-    var g24=parseFloat((goldMeta&&goldMeta.rate24k)||0);
     return Object.values(goldItems)
       .filter(function(it){ return !it.archived && it.inNetworth!=='No'; })
       .reduce(function(s,it){
-        var factor = it.purity==='22K'?(22/24):it.purity==='18K'?(18/24):1;
-        return s+(it.weight||0)*g24*factor;
+        var r=parseFloat(it.currentRate); r=(r&&r>0)?r:(it.purchaseRate||0);
+        return s+(it.weight||0)*r;
       },0);
   }
   // Manual category — use assetDetails sum
@@ -6080,20 +6059,29 @@ function importREExcel(event){
 // ════════════════════════════════════════════════════════════════
 // ── PHYSICAL GOLD ──────────────────────────────────────
 // ════════════════════════════════════════════════════════════════
-var goldItems={}, goldEditId=null, goldMeta={}, goldNotesId=null;
+var goldItems={}, goldEditId=null, goldNotesId=null;
 
 function subscribeToGold(){
   db.ref('portfolio/goldPhysical').on('value', function(snap){
     goldItems=snap.val()||{};
     if(currentPageTab==='gold') renderGold();
   });
-  db.ref('portfolio/goldMeta').on('value', function(snap){
-    goldMeta=snap.val()||{};
-    if(currentPageTab==='gold') renderGold();
-  });
 }
 
-function goldPurityFactor(p){ return p==='22K'?(22/24):p==='18K'?(18/24):1; }
+function goldItemRateBlur(el){
+  var gid=el.getAttribute('data-gid');
+  saveGoldItemRate(gid, el.value);
+}
+async function saveGoldItemRate(id, rate){
+  if(!id) return;
+  try{
+    var r=parseFloat(rate)||0;
+    await db.ref('portfolio/goldPhysical/'+id+'/currentRate').set(r);
+    if(goldItems[id]) goldItems[id].currentRate=r;
+    renderGold();
+    toast('Current rate saved');
+  } catch(ex){ toast('Save failed',true); }
+}
 
 function openGoldModal(id){
   goldEditId=id||null;
@@ -6201,36 +6189,12 @@ async function saveGoldNotes(){
   } catch(ex){ toast('Save failed',true); }
 }
 
-function goldRateBlur(el){
-  var dEl=document.getElementById('gold_ratedate');
-  saveGoldRate(el.value, dEl?dEl.value:'');
-}
-function goldRateDateChange(el){
-  var rEl=document.getElementById('gold_curr_rate');
-  saveGoldRate(rEl?rEl.value:'', el.value);
-}
-async function saveGoldRate(rate, rateDate){
-  try{
-    var r=parseFloat(rate)||0;
-    await db.ref('portfolio/goldMeta').update({rate24k:r, rateDate:rateDate||''});
-    goldMeta={rate24k:r, rateDate:rateDate||''};
-    renderGold();
-    toast('Gold rate saved');
-  } catch(ex){ toast('Save failed',true); }
-}
-
 function renderGold(){
   var allItems=Object.entries(goldItems).map(function(e){ return Object.assign({},e[1],{_id:e[0]}); });
   var items=allItems.filter(function(it){ return !it.archived; });
   var archivedItems=allItems.filter(function(it){ return !!it.archived; });
-  var rate24k=parseFloat((goldMeta&&goldMeta.rate24k)||0);
-
-  var rateInput=document.getElementById('gold_curr_rate');
-  if(rateInput && document.activeElement!==rateInput) rateInput.value=(goldMeta&&goldMeta.rate24k)||'';
-  var rateDateInput=document.getElementById('gold_ratedate');
-  if(rateDateInput && document.activeElement!==rateDateInput) rateDateInput.value=(goldMeta&&goldMeta.rateDate)||'';
-
-  function currVal(it){ return (it.weight||0)*rate24k*goldPurityFactor(it.purity); }
+  function effRate(it){ var r=parseFloat(it.currentRate); return (r&&r>0)?r:(it.purchaseRate||0); }
+  function currVal(it){ return (it.weight||0)*effRate(it); }
 
   var nwItems=items.filter(function(it){ return it.inNetworth!=='No'; });
   var totalWeight=nwItems.reduce(function(s,it){ return s+(it.weight||0); },0);
@@ -6271,9 +6235,9 @@ function renderGold(){
       '<td><span class="badge">'+(it.purity||'22K')+'</span></td>'+
       '<td class="r">'+(it.weight||0).toFixed(1)+' g</td>'+
       '<td class="r">'+inrLC(it.purchaseRate||0)+'</td>'+
-      '<td class="r" style="font-size:11px">'+inrLC(it.making||0)+(it.wastagePct?' <span style="color:var(--amber)">(+'+it.wastagePct+'% wastage)</span>':'')+(it.gstPct?' <span style="color:var(--text2)">(+'+it.gstPct+'% GST)</span>':'')+'</td>'+
+      '<td class="r" style="font-size:11px">'+inrLC(it.making||0)+(it.wastagePct?' <span style="color:var(--amber)">(+'+it.wastagePct+'% = '+inrLC((it.weight||0)*(it.purchaseRate||0)*(it.wastagePct||0)/100)+' wastage)</span>':'')+(it.gstPct?' <span style="color:var(--text2)">(+'+it.gstPct+'% GST)</span>':'')+'</td>'+
       '<td class="r" style="color:var(--blue);font-weight:700">'+inrLC(invested)+'</td>'+
-      '<td class="r">'+inrLC(rate24k)+'</td>'+
+      '<td class="r"><input type="number" step="0.01" value="'+effRate(it).toFixed(2)+'" data-gid="'+iid+'" '+(isArchived?'disabled ':'')+'style="width:85px;padding:4px 6px;border:1px solid var(--border);border-radius:4px;font-size:12px;text-align:right" onblur="goldItemRateBlur(this)" onkeydown="if(event.keyCode===13)this.blur()"></td>'+
       '<td class="r '+(cv>invested?'gain-txt':'loss-txt')+'">'+inrLC(cv)+'</td>'+
       '<td class="r '+(pnl>=0?'gain-txt':'loss-txt')+'">'+(pnl>=0?'+':'')+inrLC(pnl)+'<div style="font-size:10px;font-weight:400">'+pct.toFixed(1)+'%</div></td>'+
       '<td style="font-size:12px">'+(it.storage||'—')+'</td>'+
@@ -6557,12 +6521,11 @@ function getAutoAssetVal(def){
       .reduce((s,st)=>s+calc(st).cv,0);
   }
   if(def.autoSrc==='goldphys'){
-    var g24=parseFloat((goldMeta&&goldMeta.rate24k)||0);
     return Object.values(goldItems)
       .filter(function(it){ return !it.archived && it.inNetworth!=='No'; })
       .reduce(function(s,it){
-        var factor = it.purity==='22K'?(22/24):it.purity==='18K'?(18/24):1;
-        return s+(it.weight||0)*g24*factor;
+        var r=parseFloat(it.currentRate); r=(r&&r>0)?r:(it.purchaseRate||0);
+        return s+(it.weight||0)*r;
       },0);
   }
   return 0;
