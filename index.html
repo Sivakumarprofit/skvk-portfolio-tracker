@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SKVK Portfolio Tracker v23.1</title>
+<title>SKVK Portfolio Tracker v23.3</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.34.0/dist/tabler-icons.min.css">
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
@@ -460,7 +460,7 @@ tr:hover .acts{opacity:1}
   <div style="width:64px;height:64px;background:#0d1b2e;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px">
     <i class="ti ti-chart-bar" style="font-size:30px;color:#64b5f6"></i>
   </div>
-  <h1 style="font-size:20px;font-weight:800;margin-bottom:4px">Portfolio Tracker <span class="version-badge" style="background:#1a73e8;color:#fff;border:none;font-size:11px;vertical-align:middle">v23.2</span></h1>
+  <h1 style="font-size:20px;font-weight:800;margin-bottom:4px">Portfolio Tracker <span class="version-badge" style="background:#1a73e8;color:#fff;border:none;font-size:11px;vertical-align:middle">v23.3</span></h1>
   <p style="font-size:12px;color:var(--text2);margin-bottom:28px">SKVK Portfolio — Sign in with your Google account</p>
 
   <button onclick="signInWithGoogle()" id="googleSignInBtn"
@@ -492,7 +492,7 @@ tr:hover .acts{opacity:1}
     <div class="topbar-left">
       <span class="online-badge"><i class="ti ti-wifi" style="font-size:10px"></i> Live Shared</span>
     </div>
-    <h1><i class="ti ti-chart-bar" style="color:#64b5f6"></i><span style="color:#fff;font-weight:900">SKVK</span> <span style="color:#64b5f6;font-weight:900">Portfolio Tracker</span> <span class="version-badge">v23.2</span></h1>
+    <h1><i class="ti ti-chart-bar" style="color:#64b5f6"></i><span style="color:#fff;font-weight:900">SKVK</span> <span style="color:#64b5f6;font-weight:900">Portfolio Tracker</span> <span class="version-badge">v23.3</span></h1>
     <div class="topbar-right">
       <span class="hint" id="lastFetch"></span>
       <div id="fetchStatus"></div>
@@ -3658,7 +3658,7 @@ function calcGoldCost(){
   var gstPct=parseFloat(document.getElementById('gold_gst').value)||0;
   var base=weight*rate;
   var wastageAmt=base*(wastagePct/100);
-  var gstAmt=making*(gstPct/100);
+  var gstAmt=(base+wastageAmt+making)*(gstPct/100);
   var total=base+wastageAmt+making+gstAmt;
   document.getElementById('gold_total').value=total>0?total.toFixed(0):'';
   var prev=document.getElementById('gold_totalPreview');
@@ -3674,7 +3674,7 @@ async function saveGold(){
   var making=parseFloat(document.getElementById('gold_making').value)||0;
   var wastagePct=parseFloat(document.getElementById('gold_wastage').value)||0;
   var gstPct=parseFloat(document.getElementById('gold_gst').value)||0;
-  var total=parseFloat(document.getElementById('gold_total').value)||(weight*rate+weight*rate*wastagePct/100+making+making*gstPct/100);
+  var total=parseFloat(document.getElementById('gold_total').value)||((weight*rate)+(weight*rate*wastagePct/100)+making)*(1+gstPct/100);
   var storageVal=document.getElementById('gold_storage').value;
   var item={
     name: name, date: date,
@@ -6190,7 +6190,7 @@ function calcGoldCost(){
   var gstPct=parseFloat(document.getElementById('gold_gst').value)||0;
   var base=weight*rate;
   var wastageAmt=base*(wastagePct/100);
-  var gstAmt=making*(gstPct/100);
+  var gstAmt=(base+wastageAmt+making)*(gstPct/100);
   var total=base+wastageAmt+making+gstAmt;
   document.getElementById('gold_total').value=total>0?total.toFixed(0):'';
   var prev=document.getElementById('gold_totalPreview');
@@ -6206,7 +6206,7 @@ async function saveGold(){
   var making=parseFloat(document.getElementById('gold_making').value)||0;
   var wastagePct=parseFloat(document.getElementById('gold_wastage').value)||0;
   var gstPct=parseFloat(document.getElementById('gold_gst').value)||0;
-  var total=parseFloat(document.getElementById('gold_total').value)||(weight*rate+weight*rate*wastagePct/100+making+making*gstPct/100);
+  var total=parseFloat(document.getElementById('gold_total').value)||((weight*rate)+(weight*rate*wastagePct/100)+making)*(1+gstPct/100);
   var storageVal=document.getElementById('gold_storage').value;
   var item={
     name: name, date: date,
@@ -7234,6 +7234,13 @@ function initMarginFirebase2(){
 // ── BOOT ───────────────────────────────────────────────────
 (function(){
   if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CFG);
+
+  // Keep the browser tab title in sync with the on-screen version badge,
+  // so the two can never drift apart again.
+  try{
+    var vBadge=document.querySelector('.topbar .version-badge');
+    if(vBadge) document.title='SKVK Portfolio Tracker '+vBadge.textContent.trim();
+  } catch(e){}
 
   document.getElementById('loginScreen').style.display = 'block';
   document.getElementById('app').style.display = 'none';
