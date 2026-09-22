@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SKVK Portfolio Tracker v22.9</title>
+<title>SKVK Portfolio Tracker v23.1</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.34.0/dist/tabler-icons.min.css">
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
@@ -460,7 +460,7 @@ tr:hover .acts{opacity:1}
   <div style="width:64px;height:64px;background:#0d1b2e;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px">
     <i class="ti ti-chart-bar" style="font-size:30px;color:#64b5f6"></i>
   </div>
-  <h1 style="font-size:20px;font-weight:800;margin-bottom:4px">Portfolio Tracker <span class="version-badge" style="background:#1a73e8;color:#fff;border:none;font-size:11px;vertical-align:middle">v22.9</span></h1>
+  <h1 style="font-size:20px;font-weight:800;margin-bottom:4px">Portfolio Tracker <span class="version-badge" style="background:#1a73e8;color:#fff;border:none;font-size:11px;vertical-align:middle">v23.1</span></h1>
   <p style="font-size:12px;color:var(--text2);margin-bottom:28px">SKVK Portfolio — Sign in with your Google account</p>
 
   <button onclick="signInWithGoogle()" id="googleSignInBtn"
@@ -492,7 +492,7 @@ tr:hover .acts{opacity:1}
     <div class="topbar-left">
       <span class="online-badge"><i class="ti ti-wifi" style="font-size:10px"></i> Live Shared</span>
     </div>
-    <h1><i class="ti ti-chart-bar" style="color:#64b5f6"></i><span style="color:#fff;font-weight:900">SKVK</span> <span style="color:#64b5f6;font-weight:900">Portfolio Tracker</span> <span class="version-badge">v22.9</span></h1>
+    <h1><i class="ti ti-chart-bar" style="color:#64b5f6"></i><span style="color:#fff;font-weight:900">SKVK</span> <span style="color:#64b5f6;font-weight:900">Portfolio Tracker</span> <span class="version-badge">v23.1</span></h1>
     <div class="topbar-right">
       <span class="hint" id="lastFetch"></span>
       <div id="fetchStatus"></div>
@@ -768,25 +768,25 @@ tr:hover .acts{opacity:1}
     <!-- Main Table -->
     <div style="margin-bottom:20px">
       <div class="tbl-wrap">
-        <table style="min-width:1300px">
+        <table style="min-width:1140px">
           <thead><tr>
-            <th style="min-width:75px">Purchase Date</th>
-            <th class="r" style="min-width:65px">Days Held</th>
-            <th style="min-width:120px">Item Name</th>
-            <th class="r" style="min-width:50px">Pieces</th>
-            <th style="min-width:100px">Purchase Shop</th>
-            <th class="r" style="min-width:80px">Weight <span style="font-size:9px;opacity:.7;color:var(--amber)">(+ Sov)</span></th>
-            <th class="r" style="min-width:90px">Purchase Rate ₹/g</th>
-            <th class="r" style="min-width:70px">MC</th>
-            <th class="r" style="min-width:70px">Wastage</th>
-            <th class="r" style="min-width:55px">GST</th>
-            <th class="r" style="min-width:100px">Total Invested</th>
-            <th class="r" style="min-width:90px">Current Rate ₹/g <span style="font-size:9px;opacity:.7">(editable)</span></th>
-            <th class="r" style="min-width:100px">Current Value</th>
-            <th class="r" style="min-width:90px">P&amp;L</th>
-            <th style="min-width:90px">Storage</th>
-            <th style="min-width:95px">Total Networth</th>
-            <th style="min-width:110px">Actions</th>
+            <th style="min-width:68px">Purchase Date</th>
+            <th class="r" style="min-width:58px">Days Held</th>
+            <th style="min-width:110px">Item Name</th>
+            <th class="r" style="min-width:30px">Pieces</th>
+            <th style="min-width:85px">Purchase Shop</th>
+            <th class="r" style="min-width:72px">Weight <span style="font-size:9px;opacity:.7;color:var(--amber)">(+ Sov)</span></th>
+            <th class="r" style="min-width:78px">Purchase Rate ₹/g</th>
+            <th class="r" style="min-width:58px">MC</th>
+            <th class="r" style="min-width:62px">Wastage</th>
+            <th class="r" style="min-width:45px">GST</th>
+            <th class="r" style="min-width:95px">Total Ornament Cost</th>
+            <th class="r" style="min-width:85px">Current Rate ₹/g <span style="font-size:9px;opacity:.7">(editable)</span></th>
+            <th class="r" style="min-width:85px">Current Value</th>
+            <th class="r" style="min-width:82px">P&amp;L</th>
+            <th style="min-width:80px">Storage</th>
+            <th style="min-width:68px">Total Networth</th>
+            <th style="min-width:100px">Actions</th>
           </tr></thead>
           <tbody id="goldMainTbody"></tbody>
         </table>
@@ -1098,7 +1098,7 @@ tr:hover .acts{opacity:1}
           <div class="mf"><label>Making Charges ₹</label><input id="gold_making" type="number" step="0.01" placeholder="0" oninput="calcGoldCost()"></div>
           <div class="mf"><label>Wastage %</label><input id="gold_wastage" type="number" step="0.01" min="0" max="50" placeholder="0" oninput="calcGoldCost()"></div>
           <div class="mf"><label>GST % (on making)</label><input id="gold_gst" type="number" step="0.01" placeholder="3" oninput="calcGoldCost()"></div>
-          <div class="mf"><label>Total Invested ₹</label><input id="gold_total" type="number" placeholder="Auto-calculated" style="background:var(--bg2);font-weight:700" readonly></div>
+          <div class="mf"><label>Total Ornament Cost ₹</label><input id="gold_total" type="number" placeholder="Auto-calculated" style="background:var(--bg2);font-weight:700" readonly></div>
           <div class="mf"><label>Storage Location</label>
             <select id="gold_storage" onchange="goldStorageChanged()">
               <option value="Bank Locker">Bank Locker</option>
@@ -1116,7 +1116,7 @@ tr:hover .acts{opacity:1}
         </div>
       </div>
       <div class="modal-footer">
-        <div style="font-size:12px;color:var(--text2)">Total: <b id="gold_totalPreview">₹0</b></div>
+        <div style="font-size:12px;color:var(--text2)">Ornament Cost: <b id="gold_totalPreview">₹0</b></div>
         <button class="btn" onclick="closeGoldModal()">Cancel</button>
         <button class="btn primary" onclick="saveGold()"><i class="ti ti-device-floppy"></i> Save Item</button>
       </div>
@@ -6300,7 +6300,7 @@ function renderGold(){
 
   document.getElementById('goldSummary').innerHTML=
     '<div class="scard"><div class="lbl">Total Weight</div><div class="val">'+totalWeight.toFixed(1)+' g<div style="font-size:10px;color:var(--amber);font-weight:600">('+fmtSov(totalWeight)+')</div></div></div>'+
-    '<div class="scard"><div class="lbl">Total Invested</div><div class="val">'+inrLC(totalInvested)+'<div style="font-size:10px;color:var(--text2);font-weight:400">'+inr(totalInvested)+'</div></div></div>'+
+    '<div class="scard"><div class="lbl">Total Ornament Cost</div><div class="val">'+inrLC(totalInvested)+'<div style="font-size:10px;color:var(--text2);font-weight:400">'+inr(totalInvested)+'</div></div></div>'+
     '<div class="scard"><div class="lbl">Current Value</div><div class="val">'+inrLC(totalCurrVal)+'<div style="font-size:10px;color:var(--text2);font-weight:400">'+inr(totalCurrVal)+'</div></div></div>'+
     '<div class="scard"><div class="lbl">Overall P&L</div><div class="val '+(totalPnl>=0?'gain-txt':'loss-txt')+'">'+(totalPnl>=0?'+':'')+inrLC(totalPnl)+'<div style="font-size:10px;font-weight:400">'+totalPct.toFixed(1)+'%</div></div></div>'+
     '<div class="scard"><div class="lbl">Avg Holding</div><div class="val" style="font-size:16px">'+(avgYrs>0?avgYrs.toFixed(1)+' yrs':'—')+'</div></div>'+
@@ -6335,7 +6335,7 @@ function renderGold(){
       '<td class="r" style="font-size:11px">'+(it.wastagePct?(it.wastagePct+'%<div style="font-size:9px;color:var(--amber)">'+fmtKL((it.weight||0)*(it.purchaseRate||0)*(it.wastagePct||0)/100)+'</div>'):'—')+'</td>'+
       '<td class="r" style="font-size:11px">'+(it.gstPct?(it.gstPct+'%'):'—')+'</td>'+
       '<td class="r" style="color:var(--blue);font-weight:700">'+inrLC(invested)+'</td>'+
-      '<td class="r"><input type="number" step="0.01" value="'+effRate(it).toFixed(2)+'" data-gid="'+iid+'" '+(isArchived?'disabled ':'')+'style="width:80px;padding:4px 6px;border:1px solid var(--border);border-radius:4px;font-size:12px;text-align:right" onblur="goldItemRateBlur(this)" onkeydown="if(event.keyCode===13)this.blur()"></td>'+
+      '<td class="r"><input type="number" step="0.01" value="'+effRate(it).toFixed(2)+'" data-gid="'+iid+'" '+(isArchived?'disabled ':'')+'style="width:70px;padding:4px 6px;border:1px solid var(--border);border-radius:4px;font-size:12px;text-align:right" onblur="goldItemRateBlur(this)" onkeydown="if(event.keyCode===13)this.blur()"></td>'+
       '<td class="r '+(cv>invested?'gain-txt':'loss-txt')+'">'+inrLC(cv)+'</td>'+
       '<td class="r '+(pnl>=0?'gain-txt':'loss-txt')+'">'+(pnl>=0?'+':'')+inrLC(pnl)+'<div style="font-size:10px;font-weight:400">'+pct.toFixed(1)+'%</div></td>'+
       '<td style="font-size:12px">'+(it.storage||'—')+((it.storage==='Bank Loan'&&it.bankName)?' <span style="color:var(--text2)">('+it.bankName+')</span>':'')+'</td>'+
@@ -6392,7 +6392,7 @@ function renderGold(){
         '<span><span style="color:var(--text2)">MC: </span>'+inrLC(it.making||0)+'</span>'+
         '<span><span style="color:var(--text2)">Wastage: </span>'+(it.wastagePct||0)+'%</span>'+
         '<span><span style="color:var(--text2)">GST: </span>'+(it.gstPct||0)+'%</span>'+
-        '<span style="font-weight:700"><span style="color:var(--text2);font-weight:400">Invested: </span>'+inrLC(it.totalInvested||0)+'</span>'+
+        '<span style="font-weight:700"><span style="color:var(--text2);font-weight:400">Ornament Cost: </span>'+inrLC(it.totalInvested||0)+'</span>'+
         '<span style="font-weight:700"><span style="color:var(--text2);font-weight:400">Current: </span>'+inrLC(cv)+'</span>'+
         '<span style="font-weight:700" class="'+(pnl>=0?'gain-txt':'loss-txt')+'"><span style="color:var(--text2);font-weight:400">P&L: </span>'+(pnl>=0?'+':'')+inrLC(pnl)+' ('+pct.toFixed(1)+'%)</span>'+
       '</div></div>';
